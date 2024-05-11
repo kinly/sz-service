@@ -2,6 +2,7 @@
 #include <chrono>
 
 #include "cinatra.hpp"
+#include "sw/redis++/redis++.h"
 
 using namespace std::chrono_literals;
 
@@ -13,9 +14,11 @@ struct person_t {
 
 async_simple::coro::Lazy<void> basic_usage() {
   cinatra::coro_http_server server(std::thread::hardware_concurrency(), 9001);
+  server.set_timeout_duration(std::chrono::seconds(10));
   server.set_http_handler<cinatra::GET>(
       "/get",
       [](cinatra::coro_http_request &req, cinatra::coro_http_response &resp) {
+        resp.set_keepalive(true);
         resp.set_status_and_content(cinatra::status_type::ok, "ok");
         std::cout << "thread-id: " << std::this_thread::get_id() << std::endl;
       });
@@ -120,6 +123,17 @@ async_simple::coro::Lazy<void> basic_usage() {
 }
 
 int main() {
+  auto redis = sw::redis::Redis("redis://123456@127.0.0.1:56379?socket_timeout=50ms&connect_timeout=1s");
+  try {
+    redis.ping();
+    redis.set("test", "123");
+    std::cout << redis.get("test").value_or("empty") << std::endl;
+    std::cout << redis.get("testx").value_or("empty") << std::endl;
+  }
+  catch (const std::exception& ex) {
+    std::cout << "redis error." << ex.what() << std::endl;
+  }
+
   async_simple::coro::syncAwait(basic_usage());
   return 0;
 }

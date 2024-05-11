@@ -19,6 +19,7 @@ endif()
 
 if (MSVC)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++latest")
+    add_definitions(-DNOMINMAX -D_USE_MATH_DEFINES)
 else ()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -pthread -std=c++20")
 endif ()
