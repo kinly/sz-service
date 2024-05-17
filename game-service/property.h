@@ -22,14 +22,13 @@ public:
   using key = enum_key;
   using value = value_type;
 
-  static inline property invalid{key::none, default_value};
-
 public:
   const key _key = key::none;
   value _value = default_value;
 
+  static property invalid; 
 public:
-  explicit property(key k, value v) : _key(k), _value(v){}
+  explicit property(key k, value v) : _key(k), _value(v) {}
   ~property() = default;
 
   bool is_valid() const {
@@ -49,5 +48,7 @@ public:
     return get_value();
   }
 };
+
+property property::invalid(key::none, default_value);
 
 }; // namespace sz

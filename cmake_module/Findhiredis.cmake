@@ -5,7 +5,6 @@ else()
   SET(MODULE_PATH "${MODULE_PATH}/linux")
 endif()
 
-MESSAGE("hiredis module_path..${MODULE_PATH}/include/hiredis..")
 # SET(CMAKE_DEBUG_POSTFIX d)
 
 FIND_PATH(HIREDIS_INCLUDE_DIR

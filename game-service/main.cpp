@@ -1,8 +1,14 @@
 #include <iostream>
 #include <chrono>
+#include "calendar.h"
 
 #include "cinatra.hpp"
 #include "sw/redis++/redis++.h"
+
+#include "battle.h"
+
+#define TOML_EXCEPTIONS 0
+#include "toml++/toml.hpp"
 
 using namespace std::chrono_literals;
 
@@ -123,6 +129,43 @@ async_simple::coro::Lazy<void> basic_usage() {
 }
 
 int main() {
+
+  using namespace std::string_view_literals;
+  {
+    static constexpr std::string_view animals_key = "animals"sv;
+
+    const auto config = toml::parse_file("../../configs/animals.toml");
+    if (!config) {
+      std::cout << config.error().description() << std::endl;
+      return -1;
+    }
+    const auto &config_table = config.table();
+    if (!config_table.is_table()) {
+      return -1;
+    }
+    for (auto &&[key, value] : config_table) {
+      std::cout << key << std::endl;
+      if (!value.is_table()) {
+        continue;
+      }
+    }
+  }
+
+  auto sptr_room = sz::battle::room::create(R"(
+    {
+      "master": {
+        "uuid": 1,
+        "animals": [{"type": 1}, {"type": 1}],
+        "animal_slot": 5
+      },
+      "slaver": {
+        "uuid": 2,
+        "animals": [{"type": 1}, {"type": 1}, {"type": 1}]
+        "animal_slot": 5
+      }
+    }
+  )");
+
   auto redis = sw::redis::Redis("redis://123456@127.0.0.1:56379?socket_timeout=50ms&connect_timeout=1s");
   try {
     redis.ping();

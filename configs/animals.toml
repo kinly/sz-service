@@ -1,0 +1,68 @@
+[rat]
+id = 1
+property.hp = 1
+property.atk = 1
+
+event.start = "start"
+event.beg_round = "beg_round"
+event.beg_attack = "beg_attack"
+event.run_attack = "run_attack"
+event.end_attack = "end_attack"
+event.end_round = "end_round"
+event.dead = "dead"
+
+[ox]
+id = 2
+property.hp = 1
+property.atk = 1
+
+[tiger]
+id = 3
+property.hp = 1
+property.atk = 1
+
+[rabbit]
+id = 4
+property.hp = 1
+property.atk = 1
+
+[dragon]
+id = 5
+property.hp = 1
+property.atk = 1
+
+[snake]
+id = 6
+property.hp = 1
+property.atk = 1
+
+[horse]
+id = 7
+property.hp = 1
+property.atk = 1
+
+[sheep]
+id = 8
+property.hp = 1
+property.atk = 1
+
+[monkey]
+id = 9
+property.hp = 1
+property.atk = 1
+
+[rooster]
+id = 10
+property.hp = 1
+property.atk = 1
+
+[dog]
+id = 11
+property.hp = 1
+property.atk = 1
+
+[pig]
+id = 12
+property.hp = 1
+property.atk = 1
+
