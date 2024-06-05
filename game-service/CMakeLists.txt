@@ -58,6 +58,7 @@ set(source_files
 )
 
 set(bt_files
+  bt/bt-define.h
   bt/bt-helper.cpp
   bt/bt-helper.h
   bt/enum_register.cpp
@@ -66,7 +67,12 @@ set(bt_files
   bt/bt-node/actions/current_ts.cpp
   bt/bt-node/actions/debug_say.cpp
   bt/bt-node/actions/exchange_mode.cpp
+  bt/bt-node/actions/get_animal_list.cpp
+  bt/bt-node/actions/get_animal_type.cpp
   bt/bt-node/actions/get_attr.cpp
+  bt/bt-node/actions/get_player_master.cpp
+  bt/bt-node/actions/get_player_slaver.cpp
+  bt/bt-node/actions/get_stage.cpp
   bt/bt-node/actions/inc_attr.cpp
   bt/bt-node/actions/init.data.cpp
   bt/bt-node/actions/init.data.h
@@ -80,6 +86,7 @@ set(bt_files
   bt/bt-node/actions/revise_attr.cpp
   bt/bt-node/actions/set_blackboard.cpp
   bt/bt-node/actions/set_last_recovery_ts.cpp
+  bt/bt-node/actions/set_stage.cpp
 
   bt/bt-node/conditions/compare_attr.cpp
   bt/bt-node/conditions/compare_numeric.cpp
