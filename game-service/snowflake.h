@@ -98,14 +98,16 @@ private:
   }
 };
 
-static snowflake<> &uuid_generator() {
-  static snowflake<> inst;
-  return inst;
-}
+struct uuid_generator {
+  static snowflake<> &inst() {
+    static snowflake<> inst;
+    return inst;
+  }
 
-static snowflake<std::mutex> &uuid_generator_mt() {
-  static snowflake<std::mutex> inst;
-  return inst;
-}
+  static snowflake<std::mutex> &inst_mt() {
+    static snowflake<std::mutex> inst;
+    return inst;
+  }
+};
 
 }; // namespace sz

@@ -8,6 +8,7 @@
 #include "battle.h"
 
 #define TOML_EXCEPTIONS 0
+#include "snowflake.h"
 #include "toml++/toml.hpp"
 
 using namespace std::chrono_literals;
@@ -130,6 +131,14 @@ async_simple::coro::Lazy<void> basic_usage() {
 
 int main() {
 
+  {
+    auto _1 = sz::uuid_generator::inst_mt().nextid();
+    auto _2 = sz::uuid_generator::inst_mt().nextid();
+    auto _3 = sz::uuid_generator::inst_mt().nextid();
+
+    std::cout << std::endl;
+  }
+
   using namespace std::string_view_literals;
   {
     static constexpr std::string_view animals_key = "animals"sv;
@@ -144,14 +153,14 @@ int main() {
       return -1;
     }
     for (auto &&[key, value] : config_table) {
-      std::cout << key << std::endl;
+      // std::cout << key << std::endl;
       if (!value.is_table()) {
         continue;
       }
     }
   }
 
-  auto sptr_room = sz::battle::room::create(R"(
+  auto sptr_room = sz::battle::room::create(R"(../../configs/bt/root.xml)", R"(
     {
       "master": {
         "uuid": 1,
@@ -160,11 +169,18 @@ int main() {
       },
       "slaver": {
         "uuid": 2,
-        "animals": [{"type": 1}, {"type": 1}, {"type": 1}]
+        "animals": [{"type": 1}, {"type": 1}, {"type": 1}],
         "animal_slot": 5
       }
     }
   )");
+
+  if (const auto ret = sz::battle::room_mgr::thread_local_inst().insert(sptr_room); ret == false) {
+    std::cout << "room insert error" << std::endl;
+    return -1;
+  }
+
+  sptr_room->run_bt();
 
   auto redis = sw::redis::Redis("redis://123456@127.0.0.1:56379?socket_timeout=50ms&connect_timeout=1s");
   try {

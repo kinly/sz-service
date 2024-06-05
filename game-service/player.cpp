@@ -8,8 +8,10 @@
 //   ],
 //   "animal_slot": 5
 // }
-std::shared_ptr<sz::player> sz::player::create(uuid id,
-                                               const nlohmann::json &json_data) {
+
+
+std::shared_ptr<sz::player>
+sz::player::create(uuid id, const nlohmann::json &json_data) {
   using namespace std::string_view_literals;
 
   static constexpr std::string_view key_animals = "animals"sv;
@@ -36,7 +38,6 @@ std::shared_ptr<sz::player> sz::player::create(uuid id,
   }
 
   auto result = std::make_shared<player>(id);
-  result->_slots = slots;
 
   for (const auto &animal : json_animals) {
     if (!animal.contains(key_animal_type) ||
@@ -49,15 +50,11 @@ std::shared_ptr<sz::player> sz::player::create(uuid id,
     if (!animal_ptr) {
       continue;
     }
-    result->_aliver.emplace_back(animal_ptr);
+    result->_aliver.emplace(animal_ptr->get_uuid(), animal_ptr);
   }
 
   if (result->_aliver.empty()) {
     return nullptr;
   }
   return result;
-}
-
-void sz::player::battle_step(std::shared_ptr<battle::room> sroom) {
-
 }

@@ -19,4 +19,7 @@ include(cmake/develop.cmake)
 # include(cmake/find.hiredis.cmake)
 
 
+add_compile_options("$<$<C_COMPILER_ID:MSVC>:/utf-8>")
+add_compile_options("$<$<CXX_COMPILER_ID:MSVC>:/utf-8>")
+
 add_subdirectory(${sz_service_SOURCE_DIR}/game-service)
