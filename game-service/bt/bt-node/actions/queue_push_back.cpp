@@ -53,8 +53,6 @@ private:
   BT_DECLARE_NODE(queue_push_back<tt>);
 };
 
-BT_REGISTER_DECLARE_NODE(queue_push_back<int64_t>, "queue.push.long");
-BT_REGISTER_DECLARE_NODE(queue_push_back<std::string>, "queue.push.string");
-BT_REGISTER_DECLARE_NODE(queue_push_back<sz::battle::event>, "queue.push.battle.event");
+BT_REGISTER_DECLARE_NODE(queue_push_back<sz::battle::bill>, "queue.push_back.bill");
 
 }  // namespace bt::action

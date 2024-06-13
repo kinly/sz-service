@@ -3,10 +3,10 @@
 #include <list>
 #include <memory>
 
+#include "animal.h"
 #include "defines.h"
 
 namespace sz {
-  class animal;
 
 namespace battle {
   class room;
@@ -37,11 +37,29 @@ public:
     return _deader;
   }
 
+  void remove_dead_animal() {
+    for (auto it = _aliver.begin(); it != _aliver.end();) {
+      if (it->second == nullptr || it->second->is_dead()) {
+        it = _aliver.erase(it);
+      } else {
+        ++it;
+      }
+    }
+  }
+
   std::shared_ptr<animal> get_animal(uuid auid) const {
     if (const auto it = _aliver.find(auid); it != _aliver.end()) {
       return it->second;
     }
     return nullptr;
+  }
+
+  bool is_all_dead() const {
+    for (const auto& pr : _aliver) {
+      if (!pr.second->is_dead())
+        return false;
+    }
+    return true;
   }
 };
 

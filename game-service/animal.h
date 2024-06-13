@@ -3,7 +3,6 @@
 #include <memory>
 #include <unordered_map>
 
-#include "battle.h"
 #include "defines.h"
 #include "property.h"
 #include "snowflake.h"
@@ -11,7 +10,7 @@
 
 namespace sz {
 
-class animal : public std::enable_shared_from_this<animal> {
+  class animal : public std::enable_shared_from_this<animal> {
 public:
 
   using type = helper::animal_type;
@@ -21,8 +20,6 @@ private:
   const type _type = type::unknown;
 
   std::unordered_map<property::key, property> _properties;
-
-  std::unordered_map<battle::event, battle::execute> _event_execs;
 
 public:
   animal(uuid id, type ty) : _uuid(id), _type(ty) {}
@@ -37,9 +34,6 @@ public:
     std::shared_ptr<animal> result = std::make_shared<animal>(id, ty);
     for (const auto &one : config_property_iter->second.properties) {
       result->_properties.emplace(one.first, property{one.first, one.second});
-    }
-    for (const auto& one : config_property_iter->second.events) {
-      result->_event_execs.emplace(one.first, one.second);
     }
     return result;
   }
@@ -63,8 +57,14 @@ public:
     return iter->second;
   }
 
+  /// @brief get and create property
+  property &gc_property(const property::key &key) {
+    const auto it = _properties.emplace(key, property(key, property::default_value));
+    return it.first->second;
+  }
+
   bool is_dead() const {
-    const auto &iter = _properties.find(property::enum_key::hp);
+    const auto &iter = _properties.find(property::enum_key::prop_hp);
     if (iter == _properties.cend())
       return true;
     return iter->second.get_value() <= 0;

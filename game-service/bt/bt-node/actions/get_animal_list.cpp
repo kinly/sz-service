@@ -12,8 +12,8 @@ public:
 
   static BT::PortsList providedPorts() {
     return {
-        BT::InputPort<bt::define::uuid_type>(bt::define::room_uuid_key),
-        BT::InputPort<bt::define::uuid_type>(bt::define::player_uuid_key),
+        BT::InputPort<bt::define::uuid>(bt::define::room_uuid_key),
+        BT::InputPort<bt::define::uuid>(bt::define::player_uuid_key),
         BT::OutputPort<bt::define::animal_list_type>(bt::define::out_key),
     };
   }
@@ -21,7 +21,7 @@ public:
 private:
   BT::NodeStatus tick() override {
     const auto op_value =
-        getInput<bt::define::uuid_type>(bt::define::room_uuid_key_str);
+        getInput<bt::define::uuid>(bt::define::room_uuid_key_str);
     if (!op_value) {
       return BT::NodeStatus::FAILURE;
     }
@@ -32,7 +32,7 @@ private:
     }
 
     const auto sp_player = sp_room->get_player(
-        getInput<bt::define::uuid_type>(bt::define::player_uuid_key_str)
+        getInput<bt::define::uuid>(bt::define::player_uuid_key_str)
             .value());
     if (sp_player == nullptr) {
       return BT::NodeStatus::FAILURE;

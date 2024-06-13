@@ -1,6 +1,7 @@
 #include <cstdint>
 #include <behaviortree_cpp/action_node.h>
 
+#include "battle.h"
 #include "bt/bt-helper.h"
 
 namespace bt::action
@@ -52,7 +53,6 @@ private:
   BT_DECLARE_NODE(queue_push_front<tt>);
 };
 
-BT_REGISTER_DECLARE_NODE(queue_push_front<int64_t>, "push_front_long");
-BT_REGISTER_DECLARE_NODE(queue_push_front<std::string>, "push_front_string");
+BT_REGISTER_DECLARE_NODE(queue_push_front<sz::battle::bill>, "push_front_bill");
 
 }  // namespace bt::action

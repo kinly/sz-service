@@ -12,16 +12,16 @@ public:
 
   static BT::PortsList providedPorts() {
     return {
-        BT::InputPort<bt::define::uuid_type>(bt::define::room_uuid_key),
-        BT::InputPort<bt::define::stage_type>(bt::define::stage_key),
-        BT::InputPort<bt::define::stage_type>(bt::define::out_key),
+        BT::InputPort<bt::define::uuid>(bt::define::room_uuid_key),
+        BT::InputPort<bt::define::stage>(bt::define::stage_key),
+        BT::OutputPort<bt::define::stage>(bt::define::out_key),
     };
   }
 
 private:
   BT::NodeStatus tick() override {
     const auto op_value =
-        getInput<bt::define::uuid_type>(bt::define::room_uuid_key_str);
+        getInput<bt::define::uuid>(bt::define::room_uuid_key_str);
     if (!op_value) {
       return BT::NodeStatus::FAILURE;
     }
@@ -32,10 +32,9 @@ private:
     }
 
     sp_room->set_stage(
-        getInput<bt::define::stage_type>(bt::define::stage_key_str).value());
+        getInput<bt::define::stage>(bt::define::stage_key_str).value());
 
-    setOutput<bt::define::stage_type>(bt::define::out_key_str,
-                                      sp_room->get_stage());
+    setOutput<bt::define::stage>(bt::define::out_key_str, sp_room->get_stage());
 
     return BT::NodeStatus::SUCCESS;
   }

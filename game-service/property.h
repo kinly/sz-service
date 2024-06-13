@@ -11,11 +11,12 @@ public:
   static constexpr value_type default_value = 0;
 
   enum class enum_key : key_type {
-    none,
+    prop_none,
 
-    hp,
-    attack,
-    hit_count,
+    prop_hp,
+    prop_attack,
+    prop_hit_cnt,
+    prop_fanshang_cnt,
   };
 
 public:
@@ -23,7 +24,7 @@ public:
   using value = value_type;
 
 public:
-  const key _key = key::none;
+  const key _key = key::prop_none;
   value _value = default_value;
 
 public:
@@ -32,7 +33,7 @@ public:
   ~property() = default;
 
   bool is_valid() const {
-    return _key == key::none;
+    return _key == key::prop_none;
   }
 
   key get_key() const { return _key; }

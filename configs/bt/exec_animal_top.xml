@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4">
+  <BehaviorTree ID="exec_animal_top">
+    <ForceSuccess>
+      <Sequence>
+        <queue.front.uuid queue="{master_animals}"
+                          pop_out="false"
+                          value="{animal}"/>
+        <SubTree ID="logic_main"
+                 current_animal="{animal}"
+                 room_uuid="{room_uuid}"
+                 stage="{stage}"
+                 self="{master}"
+                 self_animals="{master_animals}"
+                 target="{slaver}"
+                 target_animals="{slaver_animals}"
+                 attack_bill_data=""
+                 _autoremap="true"/>
+        <queue.front.uuid queue="{slaver_animals}"
+                          pop_out="false"
+                          value="{animal}"/>
+        <SubTree ID="logic_main"
+                 current_animal="{animal}"
+                 room_uuid="{room_uuid}"
+                 stage="{stage}"
+                 self="{slaver}"
+                 self_animals="{slaver_animals}"
+                 target="{master}"
+                 target_animals="{master_animals}"
+                 attack_bill_data=""
+                 _autoremap="true"/>
+      </Sequence>
+    </ForceSuccess>
+  </BehaviorTree>
+
+  <!-- Description of Node Models (used by Groot) -->
+  <TreeNodesModel>
+    <SubTree ID="logic_main">
+      <input_port name="current_animal">当前动物</input_port>
+      <input_port name="room_uuid"
+                  default="{room_uuid}">房间id</input_port>
+      <input_port name="stage"
+                  default="{stage}">战斗阶段</input_port>
+      <input_port name="self">己方玩家ID</input_port>
+      <input_port name="self_animals">己方动物列表</input_port>
+      <input_port name="target">敌方玩家ID</input_port>
+      <input_port name="target_animals">敌方动物列表</input_port>
+      <input_port name="attack_bill_data">攻击信息</input_port>
+    </SubTree>
+    <Action ID="queue.front.uuid">
+      <input_port name="queue"/>
+      <input_port name="pop_out"
+                  default="true"/>
+      <output_port name="value"/>
+    </Action>
+  </TreeNodesModel>
+
+</root>

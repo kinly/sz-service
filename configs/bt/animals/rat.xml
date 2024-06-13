@@ -1,10 +1,232 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <root BTCPP_format="4">
-  <BehaviorTree ID="animals.rat">
-    <AlwaysSuccess/>
+  <BehaviorTree ID="animal_rat">
+    <ForceSuccess>
+      <Sequence>
+        <say.stage msg="i&apos;m rat, at stage"
+                   in="{stage}"/>
+        <switch.enum.battle.stage variable="{stage}"
+                                  case_1="start"
+                                  case_2="start_round"
+                                  case_3="pre_attack"
+                                  case_4="attack"
+                                  case_5="attack_bill"
+                                  case_6="end_attack"
+                                  case_7="dead"
+                                  case_8="end_round"
+                                  case_9="end">
+          <Sequence name="战斗开始">
+            <queue.foreach.copy.uuid queue="{self_animals}"
+                                     value="{oper_animal}"
+                                     pop_out="false"
+                                     if_empty="SUCCESS">
+              <add_animal_property room_uuid="{room_uuid}"
+                                   player_uuid="{self}"
+                                   animal_uuid="{oper_animal}"
+                                   animal_property="prop_attack"
+                                   animal_property_value="100"/>
+            </queue.foreach.copy.uuid>
+          </Sequence>
+          <Sequence name="回合开始">
+            <get_lowest_property_animal room_uuid="{room_uuid}"
+                                        player_uuid="{self}"
+                                        animal_property="prop_hp"
+                                        only_alive="true"
+                                        out="{minhp_animal}"/>
+            <add_animal_property room_uuid="{room_uuid}"
+                                 player_uuid="{self}"
+                                 animal_uuid="{minhp_animal}"
+                                 animal_property="prop_hp"
+                                 animal_property_value="100"/>
+          </Sequence>
+          <AlwaysSuccess name="攻击前"/>
+          <Sequence name="攻击">
+            <queue.front.uuid name="找攻击目标"
+                              queue="{target_animals}"
+                              pop_out="false"
+                              value="{beattacker_animal}"/>
+            <get_animal_property name="算攻击伤害"
+                                 room_uuid="{room_uuid}"
+                                 player_uuid="{self}"
+                                 animal_uuid="{current_animal}"
+                                 animal_property="prop_attack"
+                                 animal_property_value="{damage_value}"/>
+            <build_battle_bill name="构建伤害信息"
+                               attacker_player="{self}"
+                               attacker_animal="{current_animal}"
+                               beattacker_player="{target}"
+                               beattacker_animal="{beattacker_animal}"
+                               damage_type="damage_normal"
+                               damage_value="{damage_value}"
+                               out="{bill}"/>
+            <queue.push_back.bill queue="{attack_bills}"
+                                  value="{bill}"/>
+          </Sequence>
+          <Sequence name="结算">
+            <say.string msg="!!!!"
+                        in="????"/>
+            <resolve_battle_bill attack_bill_data="{beattack_bill}"
+                                 attacker_player="{attack_player}"
+                                 attacker_animal="{attack_animal}"
+                                 beattacker_player="{beattack_player}"
+                                 beattacker_animal="{beattack_animal}"
+                                 damage_type="{damage_type}"
+                                 damage_value="{damage_value}"/>
+            <get_animal_property name="算攻击伤害"
+                                 room_uuid="{room_uuid}"
+                                 player_uuid="{self}"
+                                 animal_uuid="{current_animal}"
+                                 animal_property="prop_hp"
+                                 animal_property_value="{hp_value}"/>
+            <get_animal_property name="检查是否还有反伤次数"
+                                 room_uuid="{room_uuid}"
+                                 player_uuid="{self}"
+                                 animal_uuid="{current_animal}"
+                                 animal_property="prop_fanshang_cnt"
+                                 animal_property_value="{fanshang_cnt_value}"/>
+            <IfThenElse>
+              <ScriptCondition code="fanshang_cnt_value &gt; 0 &amp;&amp; damage_value &gt;= hp_value &amp;&amp; damage_type == damage_normal"/>
+              <Sequence name="致命一击">
+                <build_battle_bill name="构建伤害信息"
+                                   attacker_player="{self}"
+                                   attacker_animal="{current_animal}"
+                                   beattacker_player="{attack_player}"
+                                   beattacker_animal="{attack_animal}"
+                                   damage_type="damage_fanshang"
+                                   damage_value="100"
+                                   out="{extra_bill}"/>
+                <queue.push_back.bill queue="{extra_attack_bills}"
+                                      value="{extra_bill}"/>
+                <sub_animal_property room_uuid="{room_uuid}"
+                                     player_uuid="{self}"
+                                     animal_uuid="{current_animal}"
+                                     animal_property="prop_fanshang_cnt"
+                                     animal_property_value="1"/>
+                <say.string msg="--------- zui hou yi ji"
+                            in="===="/>
+              </Sequence>
+              <Sequence name="正常伤害">
+                <sub_animal_property room_uuid="{room_uuid}"
+                                     player_uuid="{beattack_player}"
+                                     animal_uuid="{beattack_animal}"
+                                     animal_property="prop_hp"
+                                     animal_property_value="{damage_value}"/>
+                <say.string msg="======= 正常扣血"
+                            in="++++++"/>
+              </Sequence>
+            </IfThenElse>
+          </Sequence>
+          <AlwaysSuccess name="攻击结束"/>
+          <AlwaysSuccess name="死亡处理"/>
+          <AlwaysSuccess name="回合结束"/>
+          <AlwaysSuccess name="结束"/>
+          <AlwaysSuccess name="default"/>
+        </switch.enum.battle.stage>
+      </Sequence>
+    </ForceSuccess>
   </BehaviorTree>
 
   <!-- Description of Node Models (used by Groot) -->
-  <TreeNodesModel/>
+  <TreeNodesModel>
+    <Action ID="add_animal_property">
+      <input_port name="room_uuid"
+                  default="{room_uuid}"/>
+      <input_port name="player_uuid"/>
+      <input_port name="animal_uuid"/>
+      <input_port name="animal_property"/>
+      <inout_port name="animal_property_value"/>
+    </Action>
+    <Action ID="build_battle_bill">
+      <input_port name="attacker_player"/>
+      <input_port name="attacker_animal"/>
+      <input_port name="beattacker_player"/>
+      <input_port name="beattacker_animal"/>
+      <input_port name="damage_type"/>
+      <input_port name="damage_value"/>
+      <output_port name="out"/>
+    </Action>
+    <Action ID="get_animal_property">
+      <input_port name="room_uuid"
+                  default="{room_uuid}"/>
+      <input_port name="player_uuid"/>
+      <input_port name="animal_uuid"/>
+      <input_port name="animal_property"/>
+      <output_port name="animal_property_value"/>
+    </Action>
+    <Action ID="get_lowest_property_animal">
+      <input_port name="room_uuid"
+                  default="{room_uuid}"/>
+      <input_port name="player_uuid"/>
+      <input_port name="animal_property"/>
+      <input_port name="only_alive"
+                  default="true">only alive animal?</input_port>
+      <output_port name="out"/>
+    </Action>
+    <Decorator ID="queue.foreach.copy.uuid">
+      <input_port name="queue"/>
+      <output_port name="value"/>
+      <input_port name="pop_out"
+                  default="false"/>
+      <input_port name="if_empty"
+                  default="SUCCESS"/>
+    </Decorator>
+    <Action ID="queue.front.uuid">
+      <input_port name="queue"/>
+      <input_port name="pop_out"
+                  default="true"/>
+      <output_port name="value"/>
+    </Action>
+    <Action ID="queue.push_back.bill">
+      <input_port name="queue"/>
+      <input_port name="value"/>
+    </Action>
+    <Action ID="resolve_battle_bill">
+      <input_port name="attack_bill_data"/>
+      <output_port name="attacker_player"/>
+      <output_port name="attacker_animal"/>
+      <output_port name="beattacker_player"/>
+      <output_port name="beattacker_animal"/>
+      <output_port name="damage_type"/>
+      <output_port name="damage_value"/>
+    </Action>
+    <Action ID="say.stage">
+      <input_port name="msg"/>
+      <input_port name="in"/>
+    </Action>
+    <Action ID="say.string">
+      <input_port name="msg"/>
+      <input_port name="in"/>
+    </Action>
+    <Action ID="sub_animal_property">
+      <input_port name="room_uuid"
+                  default="{room_uuid}"/>
+      <input_port name="player_uuid"/>
+      <input_port name="animal_uuid"/>
+      <input_port name="animal_property"/>
+      <inout_port name="animal_property_value"/>
+    </Action>
+    <Control ID="switch.enum.battle.stage">
+      <input_port name="variable"
+                  default="{stage}"/>
+      <input_port name="case_1"
+                  default="start"/>
+      <input_port name="case_2"
+                  default="start_round"/>
+      <input_port name="case_3"
+                  default="pre_attack"/>
+      <input_port name="case_4"
+                  default="attack"/>
+      <input_port name="case_5"
+                  default="attack_bill"/>
+      <input_port name="case_6"
+                  default="end_attack"/>
+      <input_port name="case_7"
+                  default="dead"/>
+      <input_port name="case_8"
+                  default="end_round"/>
+      <input_port name="case_9"
+                  default="end"/>
+    </Control>
+  </TreeNodesModel>
 
 </root>

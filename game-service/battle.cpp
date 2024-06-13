@@ -81,6 +81,64 @@ sz::battle::room::create(const std::string_view bt_tree,
   return result;
 }
 
+sz::battle::stage sz::battle::room::next_stage() {
+  switch (_stage) {
+  case stage::start:
+    return stage::start_round;
+    break;
+  case stage::start_round:
+    return stage::pre_attack;
+    break;
+  case stage::pre_attack:
+    return stage::attack;
+    break;
+  case stage::attack:
+    return stage::attack_bill;
+    break;
+  case stage::attack_bill:
+    return stage::end_attack;
+    break;
+  case stage::end_attack:
+    return stage::dead;
+    break;
+  case stage::dead: {
+    bool slaver_end = false;
+    bool master_end = false;
+    if (_slaver->is_all_dead()) {
+      slaver_end = true;
+    }
+    if (_master->is_all_dead()) {
+      master_end = true;
+    }
+    if (slaver_end || master_end) {
+      return stage::end;
+    }
+    return stage::end_round;
+  } break;
+  case stage::end_round: {
+    if (++_round >= _max_round) {
+      return stage::end;
+    }
+    return stage::start_round;
+  } break;
+  case stage::end:
+    return stage::end;
+    break;
+  default:
+    return stage::end;
+  }
+}
+
+std::shared_ptr<sz::player> sz::battle::room::get_player(uuid puid) const {
+  if (_master && _master->get_uuid() == puid) {
+    return _master;
+  }
+  if (_slaver && _slaver->get_uuid() == puid) {
+    return _slaver;
+  }
+  return nullptr;
+}
+
 void sz::battle::room::run_bt() {
 
   auto visitor = [this](BT::TreeNode *node) {
@@ -90,7 +148,7 @@ void sz::battle::room::run_bt() {
   };
   _bt_tree.applyVisitor(visitor);
 
-  while (_evt != event::end) {
+  while (_stage != stage::end) {
     _bt_tree.tickWhileRunning();
   }
 }

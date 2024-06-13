@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4">
+  <BehaviorTree ID="exec_attack_bill_each">
+    <ForceSuccess>
+      <Sequence>
+        <queue.foreach.copy.attack_bill queue="{attack_bills}"
+                                        value="{one_attack_bill}"
+                                        pop_out="false"
+                                        if_empty="SUCCESS">
+          <Sequence>
+            <resolve_battle_bill attack_bill_data="{one_attack_bill}"
+                                 attacker_player="{attacker_player}"
+                                 attacker_animal="{ignore_animal}"
+                                 beattacker_player="{beattack_player}"
+                                 beattacker_animal="{beattack_animal}"
+                                 damage_type="{ignore_damage_type}"
+                                 damage_value="{ignore_damage_value}"/>
+            <SubTree ID="logic_main"
+                     name="被攻击逻辑"
+                     current_animal="{beattack_animal}"
+                     room_uuid="{room_uuid}"
+                     stage="{stage}"
+                     self="{beattack_player}"
+                     self_animals=""
+                     target="{attacker_player}"
+                     target_animals=""
+                     attack_bill_data="{one_attack_bill}"
+                     _autoremap="true"/>
+          </Sequence>
+        </queue.foreach.copy.attack_bill>
+        <queue.foreach.copy.attack_bill queue="{extra_attack_bills}"
+                                        value="{one_attack_bill}"
+                                        pop_out="false"
+                                        if_empty="SUCCESS">
+          <Sequence>
+            <resolve_battle_bill attack_bill_data="{one_attack_bill}"
+                                 attacker_player="{attacker_player}"
+                                 attacker_animal="{ignore_animal}"
+                                 beattacker_player="{beattack_player}"
+                                 beattacker_animal="{beattack_animal}"
+                                 damage_type="{ignore_damage_type}"
+                                 damage_value="{ignore_damage_value}"/>
+            <SubTree ID="logic_main"
+                     name="被攻击逻辑"
+                     current_animal="{beattack_animal}"
+                     room_uuid="{room_uuid}"
+                     stage="{stage}"
+                     self="{beattack_player}"
+                     self_animals=""
+                     target="{attacker_player}"
+                     target_animals=""
+                     attack_bill_data="{one_attack_bill}"
+                     _autoremap="true"/>
+          </Sequence>
+        </queue.foreach.copy.attack_bill>
+      </Sequence>
+    </ForceSuccess>
+  </BehaviorTree>
+
+  <!-- Description of Node Models (used by Groot) -->
+  <TreeNodesModel>
+    <SubTree ID="logic_main">
+      <input_port name="current_animal">当前动物</input_port>
+      <input_port name="room_uuid"
+                  default="{room_uuid}">房间id</input_port>
+      <input_port name="stage"
+                  default="{stage}">战斗阶段</input_port>
+      <input_port name="self">己方玩家ID</input_port>
+      <input_port name="self_animals">己方动物列表</input_port>
+      <input_port name="target">敌方玩家ID</input_port>
+      <input_port name="target_animals">敌方动物列表</input_port>
+      <input_port name="attack_bill_data">攻击信息</input_port>
+    </SubTree>
+    <Decorator ID="queue.foreach.copy.attack_bill">
+      <input_port name="queue"/>
+      <output_port name="value"/>
+      <input_port name="pop_out"
+                  default="false"/>
+      <input_port name="if_empty"
+                  default="SUCCESS"/>
+    </Decorator>
+    <Action ID="resolve_battle_bill">
+      <input_port name="attack_bill_data"/>
+      <output_port name="attacker_player"/>
+      <output_port name="attacker_animal"/>
+      <output_port name="beattacker_player"/>
+      <output_port name="beattacker_animal"/>
+      <output_port name="damage_type"/>
+      <output_port name="damage_value"/>
+    </Action>
+  </TreeNodesModel>
+
+</root>

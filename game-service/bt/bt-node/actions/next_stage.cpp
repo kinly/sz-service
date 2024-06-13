@@ -5,16 +5,16 @@
 #include "bt/bt-helper.h"
 
 namespace bt::action {
-class get_player_slaver : public BT::SyncActionNode {
+class next_stage : public BT::SyncActionNode {
 public:
-  get_player_slaver(const std::string &name,
-                    const BT::NodeConfiguration &config)
+  next_stage(const std::string &name, const BT::NodeConfiguration &config)
       : BT::SyncActionNode(name, config) {}
 
   static BT::PortsList providedPorts() {
     return {
         BT::InputPort<bt::define::uuid>(bt::define::room_uuid_key),
-        BT::OutputPort<bt::define::uuid>(bt::define::out_key)};
+        BT::OutputPort<bt::define::stage>(bt::define::out_key),
+    };
   }
 
 private:
@@ -30,11 +30,13 @@ private:
       return BT::NodeStatus::FAILURE;
     }
 
-    setOutput<bt::define::uuid>(bt::define::out_key_str,
-                                            sp_room->get_slaver()->get_uuid());
+    const auto next_stage = sp_room->next_stage();
+    sp_room->set_stage(next_stage);
+    setOutput<bt::define::stage>(bt::define::out_key_str, sp_room->get_stage());
+
     return BT::NodeStatus::SUCCESS;
   }
 
-  BT_REGISTER_NODE(get_player_slaver);
+  BT_REGISTER_NODE(next_stage);
 };
 }; // namespace bt::action

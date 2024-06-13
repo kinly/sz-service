@@ -1,6 +1,7 @@
 #include <string>
 #include <behaviortree_cpp/decorator_node.h>
 
+#include "bt/bt-define.h"
 #include "bt/bt-helper.h"
 
 namespace bt::decorators
@@ -114,7 +115,16 @@ private:
   BT_DECLARE_NODE(queue_foreach_copied<tt>);
 };
 
-BT_REGISTER_DECLARE_NODE(queue_foreach_copied<int64_t>, "foreach_copied_long");
-BT_REGISTER_DECLARE_NODE(queue_foreach_copied<std::string>, "foreach_copied_string");
+BT_REGISTER_DECLARE_NODE(queue_foreach_copied<std::string>,
+                         "queue.foreach.copy.string");
+
+BT_REGISTER_DECLARE_NODE(queue_foreach_copied<sz::battle::event>,
+                         "queue.foreach.copy.battle.event");
+
+BT_REGISTER_DECLARE_NODE(queue_foreach_copied<bt::define::uuid>,
+                         "queue.foreach.copy.uuid");
+
+BT_REGISTER_DECLARE_NODE(queue_foreach_copied<bt::define::attack_bill>,
+                         "queue.foreach.copy.attack_bill");
 
 };  // namespace bt::decorators

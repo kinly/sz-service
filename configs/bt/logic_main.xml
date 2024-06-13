@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4">
+  <BehaviorTree ID="logic_main">
+    <ForceSuccess>
+      <Sequence>
+        <say.stage msg="i&apos;m logic main, at stage"
+                   in="{stage}"/>
+        <say.long msg="logic_main: animal"
+                  in="{current_animal}"/>
+        <get_animal_type room_uuid="{room_uuid}"
+                         player_uuid="{self}"
+                         animal_uuid="{current_animal}"
+                         out="{animal_type}"/>
+        <say.animal_type msg="logic_main: animal_type"
+                         in="{animal_type}"/>
+        <switch.enum.animal.type variable="{animal_type}"
+                                 case_1="rat"
+                                 case_2=""
+                                 case_3=""
+                                 case_4=""
+                                 case_5=""
+                                 case_6=""
+                                 case_7=""
+                                 case_8=""
+                                 case_9=""
+                                 case_10=""
+                                 case_11=""
+                                 case_12="">
+          <SubTree ID="animal_rat"
+                   animal="{current_animal}"
+                   room_uuid="{room_uuid}"
+                   stage="{stage}"
+                   self="{self}"
+                   self_animals="{self_animals}"
+                   target="{target}"
+                   target_animals="{target_animals}"
+                   beattack_bill="{attack_bill_data}"
+                   _autoremap="true"/>
+          <AlwaysSuccess/>
+          <AlwaysSuccess/>
+          <AlwaysSuccess/>
+          <AlwaysSuccess/>
+          <AlwaysSuccess/>
+          <AlwaysSuccess/>
+          <AlwaysSuccess/>
+          <AlwaysSuccess/>
+          <AlwaysSuccess/>
+          <AlwaysSuccess/>
+          <AlwaysSuccess/>
+          <AlwaysSuccess/>
+        </switch.enum.animal.type>
+      </Sequence>
+    </ForceSuccess>
+  </BehaviorTree>
+
+  <!-- Description of Node Models (used by Groot) -->
+  <TreeNodesModel>
+    <SubTree ID="animal_rat">
+      <input_port name="animal">当前动物</input_port>
+      <input_port name="room_uuid"
+                  default="{room_uuid}">房间id</input_port>
+      <input_port name="stage"
+                  default="{stage}">战斗阶段</input_port>
+      <input_port name="self">己方玩家ID</input_port>
+      <input_port name="self_animals">己方动物列表</input_port>
+      <input_port name="target">敌方玩家ID</input_port>
+      <input_port name="target_animals">敌方动物列表</input_port>
+      <input_port name="beattack_bill">被攻击信息（attack_bill使用）</input_port>
+    </SubTree>
+    <Action ID="get_animal_type">
+      <input_port name="room_uuid"
+                  default="{room_uuid}"/>
+      <input_port name="player_uuid"/>
+      <input_port name="animal_uuid"/>
+      <output_port name="out"/>
+    </Action>
+    <Action ID="say.animal_type">
+      <input_port name="msg"/>
+      <input_port name="in"/>
+    </Action>
+    <Action ID="say.long">
+      <input_port name="msg"/>
+      <input_port name="in"/>
+    </Action>
+    <Action ID="say.stage">
+      <input_port name="msg"/>
+      <input_port name="in"/>
+    </Action>
+    <Control ID="switch.enum.animal.type">
+      <input_port name="variable"/>
+      <input_port name="case_1"/>
+      <input_port name="case_2"/>
+      <input_port name="case_3"/>
+      <input_port name="case_4"/>
+      <input_port name="case_5"/>
+      <input_port name="case_6"/>
+      <input_port name="case_7"/>
+      <input_port name="case_8"/>
+      <input_port name="case_9"/>
+      <input_port name="case_10"/>
+      <input_port name="case_11"/>
+      <input_port name="case_12"/>
+    </Control>
+  </TreeNodesModel>
+
+</root>

@@ -13,6 +13,10 @@
       <input_port name="stage"/>
       <output_port name="out" />
     </Action>
+    <Action ID="next_stage">
+      <input_port name="room_uuid" default="{room_uuid}" />
+      <output_port name="out" />
+    </Action>
 
     <Action ID="get_player_master">
       <input_port name="room_uuid" default="{room_uuid}"/>
@@ -29,11 +33,68 @@
       <output_port name="out" />
     </Action>
 
+    <Action ID="remove_dead_animal">
+      <input_port name="room_uuid" default="{room_uuid}"/>
+      <input_port name="player_uuid"/>
+    </Action>
+
     <Action ID="get_animal_type">
       <input_port name="room_uuid" default="{room_uuid}"/>
       <input_port name="player_uuid"/>
       <input_port name="animal_uuid"/>
       <output_port name="out" />
+    </Action>
+
+    <Action ID="get_animal_property">
+      <input_port name="room_uuid" default="{room_uuid}"/>
+      <input_port name="player_uuid"/>
+      <input_port name="animal_uuid"/>
+      <input_port name="animal_property"/>
+      <output_port name="animal_property_value"/>
+    </Action>
+
+    <Action ID="add_animal_property">
+      <input_port name="room_uuid" default="{room_uuid}"/>
+      <input_port name="player_uuid"/>
+      <input_port name="animal_uuid"/>
+      <input_port name="animal_property"/>
+      <inout_port name="animal_property_value"/>
+    </Action>
+
+    <Action ID="sub_animal_property">
+      <input_port name="room_uuid" default="{room_uuid}"/>
+      <input_port name="player_uuid"/>
+      <input_port name="animal_uuid"/>
+      <input_port name="animal_property"/>
+      <inout_port name="animal_property_value"/>
+    </Action>
+
+    <Action ID="get_lowest_property_animal">
+      <input_port name="room_uuid" default="{room_uuid}"/>
+      <input_port name="player_uuid"/>
+      <input_port name="animal_property"/>
+      <input_port name="only_alive" default="true">only alive animal?</input_port>
+      <output_port name="out" />
+    </Action>
+
+    <Action ID="build_battle_bill">
+      <input_port name="attacker_player"/>
+      <input_port name="attacker_animal"/>
+      <input_port name="beattacker_player"/>
+      <input_port name="beattacker_animal"/>
+      <input_port name="damage_type"/>
+      <input_port name="damage_value"/>
+      <output_port name="out" />
+    </Action>
+
+    <Action ID="resolve_battle_bill">
+      <input_port name="attack_bill_data" />
+      <output_port name="attacker_player"/>
+      <output_port name="attacker_animal"/>
+      <output_port name="beattacker_player"/>
+      <output_port name="beattacker_animal"/>
+      <output_port name="damage_type"/>
+      <output_port name="damage_value"/>
     </Action>
 
     <Action ID="say.long">
@@ -61,7 +122,47 @@
       <input_port name="in"/>
     </Action>
 
+    <Action ID="queue.clear.bill">
+      <input_port name="queue"/>
+    </Action>
+
+    <Action ID="queue.push_back.bill">
+      <input_port name="queue"/>
+      <input_port name="value"/>
+    </Action>
+
+    <Action ID="queue.front.uuid">
+      <input_port name="queue"/>
+      <input_port name="pop_out" default="true" description="pop out?" />
+      <output_port name="value"/>
+    </Action>
+
+    <Action ID="queue.back.uuid">
+      <input_port name="queue"/>
+      <input_port name="pop_out" default="true" description="pop out?" />
+      <output_port name="value"/>
+    </Action>
+
     <Decorator ID="queue.foreach.uuid">
+      <input_port name="queue"/>
+      <output_port name="value"/>
+      <input_port name="pop_out" default="false"/>
+      <input_port name="if_empty" default="SUCCESS"/>
+    </Decorator>
+    <Decorator ID="queue.foreach.copy.uuid">
+      <input_port name="queue"/>
+      <output_port name="value"/>
+      <input_port name="pop_out" default="false"/>
+      <input_port name="if_empty" default="SUCCESS"/>
+    </Decorator>
+
+    <Decorator ID="queue.foreach.attack_bill">
+      <input_port name="queue"/>
+      <output_port name="value"/>
+      <input_port name="pop_out" default="false"/>
+      <input_port name="if_empty" default="SUCCESS"/>
+    </Decorator>
+    <Decorator ID="queue.foreach.copy.attack_bill">
       <input_port name="queue"/>
       <output_port name="value"/>
       <input_port name="pop_out" default="false"/>
@@ -74,17 +175,12 @@
       <input_port name="case_2" default="start_round"/>
       <input_port name="case_3" default="pre_attack"/>
       <input_port name="case_4" default="attack"/>
-      <input_port name="case_5" default="final_attack"/>
+      <input_port name="case_5" default="attack_bill"/>
       <input_port name="case_6" default="end_attack"/>
       <input_port name="case_7" default="dead"/>
       <input_port name="case_8" default="end_round"/>
       <input_port name="case_9" default="end"/>
     </Control>
-
-    <Action ID="queue.push.battle.event">
-      <inout_port name="queue"/>
-      <input_port name="value"/>
-    </Action>
 
     <Control ID="switch.enum.animal.type">
       <input_port name="variable"/>
@@ -101,5 +197,27 @@
       <input_port name="case_11"/>
       <input_port name="case_12"/>
     </Control>
+
+    <SubTree ID="logic_main">
+      <input_port name="current_animal">当前动物</input_port>
+      <input_port name="room_uuid" default="{room_uuid}">房间id</input_port>
+      <input_port name="stage" default="{stage}">战斗阶段</input_port>
+      <input_port name="self">己方玩家ID</input_port>
+      <input_port name="self_animals">己方动物列表</input_port>
+      <input_port name="target">敌方玩家ID</input_port>
+      <input_port name="target_animals">敌方动物列表</input_port>
+      <input_port name="attack_bill_data">攻击信息</input_port>
+  </SubTree>
+
+    <SubTree ID="animal_rat">
+        <input_port name="animal">当前动物</input_port>
+        <input_port name="room_uuid" default="{room_uuid}">房间id</input_port>
+        <input_port name="stage" default="{stage}">战斗阶段</input_port>
+        <input_port name="self">己方玩家ID</input_port>
+        <input_port name="self_animals">己方动物列表</input_port>
+        <input_port name="target">敌方玩家ID</input_port>
+        <input_port name="target_animals">敌方动物列表</input_port>
+        <input_port name="beattack_bill">被攻击信息（attack_bill使用）</input_port>
+    </SubTree>
   </TreeNodesModel>
 </root>

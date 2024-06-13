@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4">
+  <BehaviorTree ID="exec_animal_each">
+    <ForceSuccess>
+      <Sequence>
+        <queue.foreach.copy.uuid queue="{master_animals}"
+                                 value="{animal}"
+                                 pop_out="false"
+                                 if_empty="SUCCESS">
+          <SubTree ID="logic_main"
+                   current_animal="{animal}"
+                   self="{master}"
+                   self_animals="{master_animals}"
+                   target="{slaver}"
+                   target_animals="{slaver_animals}"
+                   _autoremap="true"/>
+        </queue.foreach.copy.uuid>
+        <queue.foreach.copy.uuid queue="{slaver_animals}"
+                                 value="{animal}"
+                                 pop_out="false"
+                                 if_empty="SUCCESS">
+          <SubTree ID="logic_main"
+                   current_animal="{animal}"
+                   self="{slaver}"
+                   self_animals="{slaver_animals}"
+                   target="{master}"
+                   target_animals="{master_animals}"
+                   _autoremap="true"/>
+        </queue.foreach.copy.uuid>
+      </Sequence>
+    </ForceSuccess>
+  </BehaviorTree>
+
+</root>

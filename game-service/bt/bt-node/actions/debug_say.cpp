@@ -7,7 +7,7 @@
 namespace bt::action {
 
 template <class ss_tt>
-ss_tt &operator<<(ss_tt &ss, const bt::define::uuid_list_type &uuids) {
+ss_tt &operator<<(ss_tt &ss, const bt::define::uuid_list &uuids) {
   ss << "[";
   for (const auto &one : uuids) {
     ss << one << ", ";
@@ -58,8 +58,8 @@ BT_REGISTER_DECLARE_NODE(debug_say<uint64_t>, "say.ulong")
 BT_REGISTER_DECLARE_NODE(debug_say<std::string>, "say.string")
 // BT_REGISTER_DECLARE_NODE(debug_say<owner_data::ptr>, "say_owner_data")
 
-BT_REGISTER_DECLARE_NODE(debug_say<bt::define::uuid_list_type>, "say.uuids");
-BT_REGISTER_DECLARE_NODE(debug_say<bt::define::stage_type>, "say.stage");
+BT_REGISTER_DECLARE_NODE(debug_say<bt::define::uuid_list>, "say.uuids");
+BT_REGISTER_DECLARE_NODE(debug_say<bt::define::stage>, "say.stage");
 BT_REGISTER_DECLARE_NODE(debug_say<bt::define::animal_type>, "say.animal_type");
 
 }; // namespace bt::action

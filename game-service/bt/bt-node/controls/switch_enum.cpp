@@ -97,8 +97,13 @@ auto_register<switch_enum<sz::battle::stage, 9>>
     switch_enum<sz::battle::stage, 9>::__bt_reg{"switch.enum.battle.stage"};
 
 template <>
-auto_register<switch_enum<sz::animal::type, 13>>
-    switch_enum<sz::animal::type, 13>::__bt_reg{"switch.enum.animal.type"};
+auto_register<switch_enum<sz::animal::type, 12>>
+    switch_enum<sz::animal::type, 12>::__bt_reg{"switch.enum.animal.type"};
+
+template <>
+auto_register<switch_enum<sz::battle::damage_type, 2>>
+    switch_enum<sz::battle::damage_type, 2>::__bt_reg{
+        "switch.enum.damage.type"};
 
 }; // namespace bt::controls
 

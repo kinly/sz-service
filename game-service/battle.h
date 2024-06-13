@@ -6,11 +6,11 @@
 #include <behaviortree_cpp/bt_factory.h>
 
 #include "defines.h"
-
-#include "player.h"
+#include "property.h"
 
 namespace sz {
-class animal;
+  class player;
+  class animal;
 
 namespace battle {
 
@@ -37,7 +37,7 @@ enum class event : uint16_t {
     start_round,       // 回合开始
     pre_attack,        // 攻击前
     attack,            // 攻击
-    final_attack,      // 结算
+    attack_bill,       // 结算
     end_attack,        // 攻击结束
     dead,              // 死亡
     end_round,         // 回合结束
@@ -53,6 +53,43 @@ public:
 
   void run(std::shared_ptr<room> sroom, std::shared_ptr<player> splayer,
            std::shared_ptr<animal> sanimal) {
+    
+  }
+};
+
+enum class damage_type : uint32_t {
+  damage_normal,
+  damage_fanshang,
+};
+
+struct bill {
+  uuid attacker_player = invalid_uuid;
+  uuid attacker_animal = invalid_uuid;
+  uuid beattacker_player = invalid_uuid;
+  uuid beattacker_animal = invalid_uuid;
+
+  damage_type damage_type = damage_type::damage_normal;
+  property::value damage = 0;
+
+  bill() = default;
+
+  bill(uuid ap, uuid aa, uuid bap, uuid baa, enum damage_type dt,
+       property::value dv)
+      : attacker_player(ap), attacker_animal(aa), beattacker_player(bap),
+        beattacker_animal(baa), damage_type(dt), damage(dv) {}
+
+  template <class ss_tt> friend ss_tt &operator<<(ss_tt &ss, const bill &src) {
+    ss << "[" << src.attacker_player << ":" << src.attacker_animal
+       << "] attack :[" << src.beattacker_player << ":"
+       << src.beattacker_animal << "] " << src.damage_type << ":" << src.damage;
+    return ss;
+  }
+
+  inline static bill from_string(std::string_view sv) {
+    
+  }
+
+  std::string to_string() {
     
   }
 };
@@ -104,18 +141,12 @@ public:
 
   void set_stage(stage src) { _stage = src; }
 
+  stage next_stage();
+
   std::shared_ptr<player> get_master() const { return _master; }
   std::shared_ptr<player> get_slaver() const { return _slaver; }
 
-  std::shared_ptr<player> get_player(uuid puid) const {
-    if (_master && _master->get_uuid() == puid) {
-      return _master;
-    }
-    if (_slaver && _slaver->get_uuid() == puid) {
-      return _slaver;
-    }
-    return nullptr;
-  }
+  std::shared_ptr<player> get_player(uuid puid) const;
 
   void run_bt();
 

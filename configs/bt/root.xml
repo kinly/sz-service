@@ -2,7 +2,17 @@
 <root BTCPP_format="4">
   <include path="nodes.xml"/>
 
+  <include path="logic_main.xml"/>
+
   <include path="animals/rat.xml"/>
+
+  <include path="exec_animal_each.xml"/>
+
+  <include path="exec_animal_top.xml"/>
+
+  <include path="exec_animal_dead.xml"/>
+
+  <include path="exec_attack_bill_each.xml"/>
 
   <BehaviorTree ID="root">
     <Sequence>
@@ -21,25 +31,54 @@
       <get_animal_list room_uuid="{room_uuid}"
                        player_uuid="{slaver}"
                        out="{slaver_animals}"/>
-      <Sequence>
-        <queue.foreach.uuid queue="{master_animals}"
-                            value="{animal}"
-                            pop_out="false"
-                            if_empty="SUCCESS">
-          <Sequence>
-            <say.long msg="animal"
-                      in="{animal}"/>
-            <get_animal_type room_uuid="{room_uuid}"
-                             player_uuid="{master}"
-                             animal_uuid="{animal}"
-                             out="{animal_type}"/>
-            <say.animal_type msg="animal_type"
-                             in="{animal_type}"/>
-          </Sequence>
-        </queue.foreach.uuid>
-      </Sequence>
-      <say.uuids msg="uuids"
-                 in="{master_animals}"/>
+      <switch.enum.battle.stage variable="{stage}"
+                                case_1="start"
+                                case_2="start_round"
+                                case_3="pre_attack"
+                                case_4="attack"
+                                case_5="attack_bill"
+                                case_6="end_attack"
+                                case_7="dead"
+                                case_8="end_round"
+                                case_9="end">
+        <SubTree ID="exec_animal_each"
+                 name="stage: 开始"
+                 _autoremap="true"/>
+        <SubTree ID="exec_animal_each"
+                 name="stage: 回合开始"
+                 _autoremap="true"/>
+        <SubTree ID="exec_animal_each"
+                 name="stage: 攻击前"
+                 _autoremap="true"/>
+        <SubTree ID="exec_animal_top"
+                 name="stage: 攻击"
+                 _autoremap="true"/>
+        <SubTree ID="exec_attack_bill_each"
+                 name="stage: 结算"
+                 _autoremap="true"/>
+        <SubTree ID="exec_animal_each"
+                 name="stage: 攻击结束"
+                 _autoremap="true"/>
+        <SubTree ID="exec_animal_dead"
+                 name="stage: 死亡的"
+                 _autoremap="true"/>
+        <Sequence>
+          <queue.clear.bill queue="{attack_bills}"/>
+          <queue.clear.bill queue="{extra_attack_bills}"/>
+          <SubTree ID="exec_animal_each"
+                   name="stage: 回合结束"
+                   _autoremap="true"/>
+          <remove_dead_animal room_uuid="{room_uuid}"
+                              player_uuid="{master}"/>
+          <remove_dead_animal room_uuid="{room_uuid}"
+                              player_uuid="{slaver}"/>
+        </Sequence>
+        <SubTree ID="exec_animal_each"
+                 _autoremap="true"/>
+        <AlwaysFailure name="default"/>
+      </switch.enum.battle.stage>
+      <next_stage room_uuid="{room_uuid}"
+                  out="{next_stage}"/>
     </Sequence>
   </BehaviorTree>
 
@@ -49,13 +88,6 @@
       <input_port name="room_uuid"
                   default="{room_uuid}"/>
       <input_port name="player_uuid"/>
-      <output_port name="out"/>
-    </Action>
-    <Action ID="get_animal_type">
-      <input_port name="room_uuid"
-                  default="{room_uuid}"/>
-      <input_port name="player_uuid"/>
-      <input_port name="animal_uuid"/>
       <output_port name="out"/>
     </Action>
     <Action ID="get_player_master">
@@ -76,26 +108,45 @@
     <Action ID="init.uuid">
       <output_port name="data"/>
     </Action>
-    <Decorator ID="queue.foreach.uuid">
+    <Action ID="next_stage">
+      <input_port name="room_uuid"
+                  default="{room_uuid}"/>
+      <output_port name="out"/>
+    </Action>
+    <Action ID="queue.clear.bill">
       <input_port name="queue"/>
-      <output_port name="value"/>
-      <input_port name="pop_out"
-                  default="false"/>
-      <input_port name="if_empty"
-                  default="SUCCESS"/>
-    </Decorator>
-    <Action ID="say.animal_type">
-      <input_port name="msg"/>
-      <input_port name="in"/>
+    </Action>
+    <Action ID="remove_dead_animal">
+      <input_port name="room_uuid"
+                  default="{room_uuid}"/>
+      <input_port name="player_uuid"/>
     </Action>
     <Action ID="say.long">
       <input_port name="msg"/>
       <input_port name="in"/>
     </Action>
-    <Action ID="say.uuids">
-      <input_port name="msg"/>
-      <input_port name="in"/>
-    </Action>
+    <Control ID="switch.enum.battle.stage">
+      <input_port name="variable"
+                  default="{stage}"/>
+      <input_port name="case_1"
+                  default="start"/>
+      <input_port name="case_2"
+                  default="start_round"/>
+      <input_port name="case_3"
+                  default="pre_attack"/>
+      <input_port name="case_4"
+                  default="attack"/>
+      <input_port name="case_5"
+                  default="attack_bill"/>
+      <input_port name="case_6"
+                  default="end_attack"/>
+      <input_port name="case_7"
+                  default="dead"/>
+      <input_port name="case_8"
+                  default="end_round"/>
+      <input_port name="case_9"
+                  default="end"/>
+    </Control>
   </TreeNodesModel>
 
 </root>

@@ -13,14 +13,14 @@ public:
 
   static BT::PortsList providedPorts() {
     return {
-        BT::InputPort<bt::define::uuid_type>(bt::define::room_uuid_key),
-        BT::OutputPort<bt::define::uuid_type>(bt::define::out_key)};
+        BT::InputPort<bt::define::uuid>(bt::define::room_uuid_key),
+        BT::OutputPort<bt::define::uuid>(bt::define::out_key)};
   }
 
 private:
   BT::NodeStatus tick() override {
     const auto op_value =
-        getInput<bt::define::uuid_type>(bt::define::room_uuid_key_str);
+        getInput<bt::define::uuid>(bt::define::room_uuid_key_str);
     if (!op_value) {
       return BT::NodeStatus::FAILURE;
     }
@@ -30,7 +30,7 @@ private:
       return BT::NodeStatus::FAILURE;
     }
 
-    setOutput<bt::define::uuid_type>(bt::define::out_key_str,
+    setOutput<bt::define::uuid>(bt::define::out_key_str,
                                       sp_room->get_master()->get_uuid());
     return BT::NodeStatus::SUCCESS;
   }

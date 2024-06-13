@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4">
+  <BehaviorTree ID="exec_animal_dead">
+    <ForceSuccess>
+      <Sequence>
+        <say.long msg="animal"
+                  in="{current_animal}"/>
+        <get_animal_type room_uuid="{room_uuid}"
+                         player_uuid="{self}"
+                         animal_uuid="{current_animal}"
+                         out="{animal_type}"/>
+        <say.animal_type msg="animal_type"
+                         in="{animal_type}"/>
+        <switch.enum.animal.type variable="{animal_type}"
+                                 case_1="rat"
+                                 case_2=""
+                                 case_3=""
+                                 case_4=""
+                                 case_5=""
+                                 case_6=""
+                                 case_7=""
+                                 case_8=""
+                                 case_9=""
+                                 case_10=""
+                                 case_11=""
+                                 case_12="">
+          <AlwaysSuccess/>
+          <AlwaysSuccess/>
+          <AlwaysSuccess/>
+          <AlwaysSuccess/>
+          <AlwaysSuccess/>
+          <AlwaysSuccess/>
+          <AlwaysSuccess/>
+          <AlwaysSuccess/>
+          <AlwaysSuccess/>
+          <AlwaysSuccess/>
+          <AlwaysSuccess/>
+          <AlwaysSuccess/>
+          <AlwaysSuccess/>
+        </switch.enum.animal.type>
+      </Sequence>
+    </ForceSuccess>
+  </BehaviorTree>
+
+</root>

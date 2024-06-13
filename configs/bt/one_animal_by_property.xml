@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<root BTCPP_format="4">
+  <BehaviorTree ID="one_animal_by_property">
+    <Sequence>
+      <queue.front.uuid queue="{animal_queue}"
+                        pop_out="true"
+                        value="{pre_animal}"/>
+    </Sequence>
+  </BehaviorTree>
+
+  <!-- Description of Node Models (used by Groot) -->
+  <TreeNodesModel>
+    <Action ID="queue.front.uuid">
+      <input_port name="queue"/>
+      <input_port name="pop_out"
+                  default="true"/>
+      <output_port name="value"/>
+    </Action>
+  </TreeNodesModel>
+
+</root>

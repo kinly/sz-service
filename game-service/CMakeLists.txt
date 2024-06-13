@@ -39,37 +39,44 @@ else()
 endif()
 
 set(header_files
-  ./animal.h
-  ./battle.h
-  ./calendar.h
-  ./cfg_animals.h
-  ./non-lock.h
-  ./player.h
-  ./property.h
-  ./room.h
-  ./snowflake.h
-  ./test_helper.h
+  animal.h
+  battle.h
+  calendar.h
+  cfg_animals.h
+  non-lock.h
+  player.h
+  property.h
+  room.h
+  snowflake.h
+  test_helper.h
 )
 
 set(source_files
-  ./battle.cpp
-  ./main.cpp
-  ./player.cpp
+  animal.cpp
+  battle.cpp
+  main.cpp
+  player.cpp
 )
 
 set(bt_files
   bt/bt-define.h
+  bt/bt-format.cpp
   bt/bt-helper.cpp
   bt/bt-helper.h
   bt/enum_register.cpp
 
+  bt/bt-node/actions/animal_action.cpp
+  bt/bt-node/actions/build_battle_bill.cpp
+  bt/bt-node/actions/change_animal_property.cpp
   bt/bt-node/actions/clear_last_target.cpp
   bt/bt-node/actions/current_ts.cpp
   bt/bt-node/actions/debug_say.cpp
   bt/bt-node/actions/exchange_mode.cpp
   bt/bt-node/actions/get_animal_list.cpp
+  bt/bt-node/actions/get_animal_property.cpp
   bt/bt-node/actions/get_animal_type.cpp
   bt/bt-node/actions/get_attr.cpp
+  bt/bt-node/actions/get_lowest_property_animal.cpp
   bt/bt-node/actions/get_player_master.cpp
   bt/bt-node/actions/get_player_slaver.cpp
   bt/bt-node/actions/get_stage.cpp
@@ -78,11 +85,15 @@ set(bt_files
   bt/bt-node/actions/init.data.h
   bt/bt-node/actions/init_owner_data.cpp
   bt/bt-node/actions/last_recovery_ts.cpp
-  bt/bt-node/actions/queue_pop_back.cpp
-  bt/bt-node/actions/queue_pop_front.cpp
+  bt/bt-node/actions/next_stage.cpp
+  bt/bt-node/actions/queue_back.cpp
+  bt/bt-node/actions/queue_clear.cpp
+  bt/bt-node/actions/queue_front.cpp
   bt/bt-node/actions/queue_push_back.cpp
   bt/bt-node/actions/queue_push_front.cpp
   bt/bt-node/actions/queue_size.cpp
+  bt/bt-node/actions/remove_dead_animal.cpp
+  bt/bt-node/actions/resolve_battle_bill.cpp
   bt/bt-node/actions/revise_attr.cpp
   bt/bt-node/actions/set_blackboard.cpp
   bt/bt-node/actions/set_last_recovery_ts.cpp

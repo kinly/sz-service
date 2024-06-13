@@ -94,7 +94,9 @@ BT_REGISTER_DECLARE_NODE(queue_foreach<std::string>, "queue.foreach.string");
 BT_REGISTER_DECLARE_NODE(queue_foreach<sz::battle::event>,
                          "queue.foreach.battle.event");
 
-BT_REGISTER_DECLARE_NODE(queue_foreach<bt::define::uuid_type>,
-                         "queue.foreach.uuid");
+BT_REGISTER_DECLARE_NODE(queue_foreach<bt::define::uuid>, "queue.foreach.uuid");
+
+BT_REGISTER_DECLARE_NODE(queue_foreach<bt::define::attack_bill>,
+                         "queue.foreach.attack_bill");
 
 }; // namespace bt::decorators

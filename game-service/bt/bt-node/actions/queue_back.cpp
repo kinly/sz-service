@@ -1,23 +1,25 @@
 #include <cstdint>
 #include <behaviortree_cpp/action_node.h>
 
+#include "bt/bt-define.h"
 #include "bt/bt-helper.h"
 
 namespace bt::action
 {
 template <class tt>
-class queue_pop_back : public BT::SyncActionNode
+class queue_back : public BT::SyncActionNode
 {
 public:
-  queue_pop_back(const std::string& name, const BT::NodeConfiguration& config)
+  queue_back(const std::string& name, const BT::NodeConfiguration& config)
     : BT::SyncActionNode(name, config)
   {}
 
   static BT::PortsList providedPorts()
   {
     return {
-      BT::BidirectionalPort<std::deque<tt>>("queue"),
-      BT::OutputPort<tt>("value"),
+        BT::BidirectionalPort<std::deque<tt>>("queue"),
+        BT::InputPort<bool>("pop_out", true, "pop out?"),
+        BT::OutputPort<tt>("value"),
     };
   }
 
@@ -45,15 +47,18 @@ private:
     }
 
     setOutput("value", deque_ptr->back());
-    deque_ptr->pop_back();
+    if (getInput<bool>("pop_out").value()) {
+      deque_ptr->pop_back();
+    }
 
     return BT::NodeStatus::SUCCESS;
   }
 
-  BT_DECLARE_NODE(queue_pop_back<tt>);
+  BT_DECLARE_NODE(queue_back<tt>);
 };
 
-BT_REGISTER_DECLARE_NODE(queue_pop_back<int64_t>, "pop_back_long");
-BT_REGISTER_DECLARE_NODE(queue_pop_back<std::string>, "pop_back_string");
+BT_REGISTER_DECLARE_NODE(queue_back<std::string>, "pop_back_string");
+
+BT_REGISTER_DECLARE_NODE(queue_back<bt::define::uuid>, "queue.back.uuid");
 
 }  // namespace bt::action

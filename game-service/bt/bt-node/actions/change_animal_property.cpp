@@ -5,9 +5,12 @@
 #include "bt/bt-helper.h"
 
 namespace bt::action {
-class get_animal_type : public BT::SyncActionNode {
+
+template<bool is_inc_vv>
+class change_animal_property : public BT::SyncActionNode {
 public:
-  get_animal_type(const std::string &name, const BT::NodeConfiguration &config)
+  change_animal_property(const std::string &name,
+                         const BT::NodeConfiguration &config)
       : BT::SyncActionNode(name, config) {}
 
   static BT::PortsList providedPorts() {
@@ -15,7 +18,10 @@ public:
         BT::InputPort<bt::define::uuid>(bt::define::room_uuid_key),
         BT::InputPort<bt::define::uuid>(bt::define::player_uuid_key),
         BT::InputPort<bt::define::uuid>(bt::define::animal_uuid_key),
-        BT::OutputPort<bt::define::animal_type>(bt::define::out_key),
+        BT::InputPort<bt::define::animal_property>(
+            bt::define::animal_property_key),
+        BT::BidirectionalPort<bt::define::animal_property_value>(
+            bt::define::animal_property_value_key),
     };
   }
 
@@ -46,10 +52,26 @@ private:
       return BT::NodeStatus::FAILURE;
     }
 
-    setOutput<bt::define::animal_type>(bt::define::out_key_str, sp_animal->get_type());
+    auto &prop = sp_animal->gc_property(getInput<bt::define::animal_property>(
+                                            bt::define::animal_property_key_str)
+                                            .value());
+
+    const auto value =
+        prop.change_value(getInput<bt::define::animal_property_value>(
+                              bt::define::animal_property_value_key_str)
+                              .value() *
+                          (is_inc_vv ? 1 : -1));
+
+    setOutput<bt::define::animal_property_value>(
+        bt::define::animal_property_value_key_str, value);
+
     return BT::NodeStatus::SUCCESS;
   }
 
-  BT_REGISTER_NODE(get_animal_type);
+  BT_DECLARE_NODE(change_animal_property<is_inc_vv>);
 };
+
+BT_REGISTER_DECLARE_NODE(change_animal_property<true>, "add_animal_property");
+BT_REGISTER_DECLARE_NODE(change_animal_property<false>, "sub_animal_property");
+
 }; // namespace bt::action
