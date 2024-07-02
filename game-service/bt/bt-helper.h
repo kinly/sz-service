@@ -1,10 +1,12 @@
 #pragma once
 #include <behaviortree_cpp/bt_factory.h>
 
+#include "singleton.h"
+
 class creature;
 
 namespace bt {
-class helper final {
+class helper final : public util::singleton<helper> {
 protected:
   inline static BT::BehaviorTreeFactory _factory{};
 
@@ -13,11 +15,6 @@ protected:
 public:
   helper() = default;
   ~helper() = default;
-
-  static helper &instance() {
-    static helper result;
-    return result;
-  }
 
   static BT::BehaviorTreeFactory &factory() { return _factory; }
 

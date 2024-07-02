@@ -5,8 +5,8 @@
 
 #include "defines.h"
 #include "property.h"
-#include "snowflake.h"
 #include "test_helper.h"
+#include "uuid.snowflake.h"
 
 namespace sz {
 
@@ -30,7 +30,7 @@ public:
     if (config_property_iter == helper::animal_configure.cend())
       return nullptr;
 
-    uuid id = uuid_generator::inst_mt().nextid();
+    uuid id = util::uuid_snowflake::generator::inst_mt().nextid();
     std::shared_ptr<animal> result = std::make_shared<animal>(id, ty);
     for (const auto &one : config_property_iter->second.properties) {
       result->_properties.emplace(one.first, property{one.first, one.second});

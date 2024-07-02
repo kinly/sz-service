@@ -5,7 +5,7 @@ bt::helper::static_load_tree(const std::string_view key,
                              const std::string_view file) {
   try {
 
-    _factory.registerBehaviorTreeFromFile(file);
+    _factory.registerBehaviorTreeFromFile(std::filesystem::path(file));
     auto bt = _factory.createTree(std::string(key));
 
     return std::move(bt);

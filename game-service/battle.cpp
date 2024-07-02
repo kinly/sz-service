@@ -1,7 +1,6 @@
 #include "battle.h"
 
 #include "player.h"
-#include "snowflake.h"
 #include "bt/bt-helper.h"
 #include "bt/bt-node/actions/init.data.h"
 #include "nlohmann/json.hpp"
@@ -50,7 +49,7 @@ sz::battle::room::create(const std::string_view bt_tree,
   const nlohmann::json &json_master = root[key_master];
   const nlohmann::json &json_slaver = root[key_slaver];
 
-  uuid id = uuid_generator::inst_mt().nextid();
+  uuid id = util::uuid_snowflake::generator::inst_mt().nextid();
   auto result = std::make_shared<room>(id, std::move(optional_bt.value()), std::this_thread::get_id());
 
   {

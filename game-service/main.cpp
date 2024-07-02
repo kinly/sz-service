@@ -3,12 +3,12 @@
 #include "calendar.h"
 
 #include "cinatra.hpp"
-#include "sw/redis++/redis++.h"
+#include "redis_helper.h"
 
 #include "battle.h"
+#include "datetime.h"
 
-#define TOML_EXCEPTIONS 0
-#include "snowflake.h"
+#include "uuid.snowflake.h"
 #include "toml++/toml.hpp"
 
 using namespace std::chrono_literals;
@@ -129,12 +129,161 @@ async_simple::coro::Lazy<void> basic_usage() {
   }
 }
 
+#include "logger.h"
+
+template<class value_tt>
+class thread_local_helper final {
+private:
+  static inline thread_local value_tt _value{};
+
+public:
+  thread_local_helper() = default;
+  ~thread_local_helper() = default;
+
+  static void set(value_tt &&v) { _value = v; }
+  static void set(const value_tt &v) { _value = v; }
+  static value_tt get() { return _value; }
+};
+
+class dlk_helper final {
+  util::redis _redis;
+
+public:
+  dlk_helper(std::string_view uri) : _redis(util::redis(uri.data())) {}
+
+  inline bool lock(std::string_view key_sv) {
+
+    static constexpr std::chrono::milliseconds ttl{5000};
+
+    const auto uuid = util::uuid_snowflake::generator::inst_mt().nextid();
+    const auto uuid_string = std::to_string(uuid);
+    thread_local_helper<std::string>::set(uuid_string);
+
+    return _redis.set(key_sv, uuid_string, ttl, util::redis_utype::NOT_EXIST);
+  }
+
+  inline bool unlock(std::string_view key_sv) {
+    auto value = thread_local_helper<std::string>::get();
+
+    constexpr std::string_view script =
+        "if redis.call('get', KEYS[1]) == ARGV[1] then "
+        "  return redis.call('del', KEYS[1]) "
+        "else return 0 "
+        "end";
+
+    const auto result = _redis.eval<long long>(
+        script, std::initializer_list<std::string_view>{key_sv},
+        std::initializer_list<std::string_view>{value});
+    return 1 == result;
+  }
+};
+
+class apollo_client {
+private:
+  cinatra::coro_http_client _http_client{};
+  std::atomic_bool _stopped = false;
+
+public:
+  async_simple::coro::Lazy<void> waiting_update() {
+    while (!_stopped.load()) {
+      if (auto result =
+        co_await _http_client.async_get("http://127.0.0.1:8080/get"); result.status == 200) {
+        std::cout << result.resp_body << std::endl;
+      }
+    }
+  }
+};
+
 int main() {
+  util::logger::easy_logger::get().init("logs/game-service.log");
+
+  
+
+
+  auto redis = sw::redis::Redis(
+      "redis://123456@127.0.0.1:56379?socket_timeout=50ms&connect_timeout=1s&keep_alive=true");
+
+  std::string_view dlk_key = "123";
+
+  std::pair<int, int> count;
+
+  std::thread t1([dlk_key, &count] {
+    dlk_helper dlk(
+        "redis://"
+        "123456@127.0.0.1:56379?socket_timeout=1s&connect_timeout=1s&keep_alive=true");
+
+    for (int i = 0; i < 1000; ++i) {
+      while (dlk.lock(dlk_key) == false)
+        std::this_thread::sleep_for(1ms);
+
+      count.first += 1;
+      std::cout << "thread 1 locked...." << util::datetime::current_timestamp()
+                << " count: " << count.first << ":" << count.second
+                << std::endl;
+      // std::this_thread::sleep_for(10ms);
+      dlk.unlock(dlk_key);
+    }
+  });
+
+  std::thread t2([dlk_key, &count] {
+    dlk_helper dlk(
+        "redis://"
+        "123456@127.0.0.1:56379?socket_timeout=1s&connect_timeout=1s&keep_alive=true");
+    for (int i = 0; i < 1000; ++i) {
+      while (dlk.lock(dlk_key) == false)
+        std::this_thread::sleep_for(1ms);
+
+      count.second += 1;
+      std::cout << "thread 2 locked...." << util::datetime::current_timestamp()
+                << " count: " << count.first << ":" << count.second
+                << std::endl;
+      // std::this_thread::sleep_for(10ms);
+      dlk.unlock(dlk_key);
+    }
+  });
+
+  t1.detach();
+  t2.detach();
+
+  try {
+    redis.ping();
+    redis.set("test", "123");
+    std::cout << redis.get("test").value_or("empty") << std::endl;
+    std::cout << redis.get("testx").value_or("empty") << std::endl;
+  } catch (const std::exception &ex) {
+    std::cout << "redis error." << ex.what() << std::endl;
+  }
 
   {
-    auto _1 = sz::uuid_generator::inst_mt().nextid();
-    auto _2 = sz::uuid_generator::inst_mt().nextid();
-    auto _3 = sz::uuid_generator::inst_mt().nextid();
+    if (util::logger::easy_logger_static::should_log(spdlog::level::warn)) {
+      constexpr nostd::source_location ns_sl = nostd::source_location::current(
+          __builtin_FILE(), __builtin_FUNCTION(), __builtin_LINE(),
+          __builtin_COLUMN());
+      util::logger::easy_logger::get().log(
+          {ns_sl.file_name(), ns_sl.line(), ns_sl.function_name()},
+          spdlog::level::trace, "warn log, {0}-{0}-{1}", 0, 1, 2);
+    }
+  };
+  ;
+
+  LOG_WARN("warn log, {1} wwwww {1}", 1, 2);
+  LOG_TRACE("warn log, {0}, {0}, {1}", 1, 2);
+  {
+    if (util::logger::easy_logger_static::should_log(spdlog::level::trace)) {
+      constexpr nostd::source_location ns_sl = nostd::source_location::current(
+          __builtin_FILE(), __builtin_FUNCTION(), __builtin_LINE(),
+          __builtin_COLUMN());
+      util::logger::easy_logger::get().log(
+          {ns_sl.file_name(), ns_sl.line(), ns_sl.function_name()},
+          spdlog::level::trace, "warn log, {}-{}-{}", 0, 1, 2);
+    }
+  };
+  ;
+
+  {
+    auto _1 = util::uuid_snowflake::generator::inst_mt().nextid();
+    auto _2 = util::uuid_snowflake::generator::inst_mt().nextid();
+    auto _3 = util::uuid_snowflake::generator::inst_mt().nextid();
 
     std::cout << std::endl;
   }
@@ -181,17 +330,6 @@ int main() {
   }
 
   sptr_room->run_bt();
-
-  auto redis = sw::redis::Redis("redis://123456@127.0.0.1:56379?socket_timeout=50ms&connect_timeout=1s");
-  try {
-    redis.ping();
-    redis.set("test", "123");
-    std::cout << redis.get("test").value_or("empty") << std::endl;
-    std::cout << redis.get("testx").value_or("empty") << std::endl;
-  }
-  catch (const std::exception& ex) {
-    std::cout << "redis error." << ex.what() << std::endl;
-  }
 
   async_simple::coro::syncAwait(basic_usage());
   return 0;

@@ -61,6 +61,35 @@
                                out="{bill}"/>
             <queue.push_back.bill queue="{attack_bills}"
                                   value="{bill}"/>
+            <Sequence name="二次攻击">
+              <get_animal_property room_uuid="{room_uuid}"
+                                   player_uuid="{self}"
+                                   animal_uuid="{current_animal}"
+                                   animal_property="prop_hit_cnt"
+                                   animal_property_value="{hit_cnt_value}"/>
+              <Fallback>
+                <Inverter>
+                  <ScriptCondition code="hit_cnt_value == 3 || hit_cnt_value == 6 || hit_cnt_value == 9"/>
+                </Inverter>
+                <queue.foreach.copy.uuid queue="{target_animals}"
+                                         value="{twice_hit_animal}"
+                                         pop_out="false"
+                                         if_empty="SUCCESS">
+                  <Sequence>
+                    <build_battle_bill name="构建伤害信息"
+                                       attacker_player="{self}"
+                                       attacker_animal="{current_animal}"
+                                       beattacker_player="{target}"
+                                       beattacker_animal="{twice_hit_animal}"
+                                       damage_type="damage_normal"
+                                       damage_value="10"
+                                       out="{bill}"/>
+                    <queue.push_back.bill queue="{attack_bills}"
+                                          value="{bill}"/>
+                  </Sequence>
+                </queue.foreach.copy.uuid>
+              </Fallback>
+            </Sequence>
           </Sequence>
           <Sequence name="结算">
             <say.string msg="!!!!"

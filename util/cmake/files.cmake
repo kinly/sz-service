@@ -1,0 +1,12 @@
+
+set(UTIL_DIR "${CMAKE_CURRENT_LIST_DIR}/..")
+
+file(GLOB UTIL_FILES "${UTIL_DIR}/*.h")
+
+source_group(TREE
+  ${CMAKE_CURRENT_SOURCE_DIR}
+  FILES
+  ${UTIL_DIR}
+)
+
+set(ALL_FILES ${UTIL_FILES})

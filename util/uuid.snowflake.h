@@ -7,12 +7,11 @@
 
 #include "non-lock.h"
 
-namespace sz {
+namespace util::uuid_snowflake {
 
 // via: https://github.com/sniper00/snowflake-cpp/blob/master/snowflake.hpp
 
-template <typename lock_tt = nonlock>
-class snowflake {
+template <typename lock_tt = empty_mutex> class snowflake {
   using lock_type = lock_tt;
   static constexpr int64_t TWEPOCH = 1704038400000;
   static constexpr int64_t WORKER_ID_BITS = 5L;
@@ -98,7 +97,7 @@ private:
   }
 };
 
-struct uuid_generator {
+struct generator {
   static snowflake<> &inst() {
     static snowflake<> inst;
     return inst;
@@ -110,4 +109,4 @@ struct uuid_generator {
   }
 };
 
-}; // namespace sz
+}; // namespace util::uuid_snowflake

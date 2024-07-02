@@ -5,9 +5,9 @@
 #include "bt/bt-helper.h"
 
 namespace bt::action {
-template <class tt> class queue_front : public BT::SyncActionNode {
+template <class tt> class queue_random_one : public BT::SyncActionNode {
 public:
-  queue_front(const std::string &name, const BT::NodeConfiguration &config)
+  queue_random_one(const std::string &name, const BT::NodeConfiguration &config)
       : BT::SyncActionNode(name, config) {}
 
   static BT::PortsList providedPorts() {
@@ -45,9 +45,10 @@ private:
     return BT::NodeStatus::SUCCESS;
   }
 
-  BT_DECLARE_NODE(queue_front<tt>);
+  BT_DECLARE_NODE(queue_random_one<tt>);
 };
 
-BT_REGISTER_DECLARE_NODE(queue_front<bt::define::uuid>, "queue.front.uuid");
+BT_REGISTER_DECLARE_NODE(queue_random_one<bt::define::uuid>,
+                         "queue.random.uuid");
 
 } // namespace bt::action
