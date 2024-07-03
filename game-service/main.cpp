@@ -195,10 +195,8 @@ public:
 };
 
 int main() {
+
   util::logger::easy_logger::get().init("logs/game-service.log");
-
-  
-
 
   auto redis = sw::redis::Redis(
       "redis://123456@127.0.0.1:56379?socket_timeout=50ms&connect_timeout=1s&keep_alive=true");
