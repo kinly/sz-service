@@ -1,5 +1,31 @@
 ## 相对完整的小游戏
 
+### time-line
+- [ ] 创建项目，基础物料准备
+  - [x] 基础物料：http 网络库（asio、coroutine） cinatra
+  - [x] 基础物料：json 序列化库 nlohmann/json
+  - [x] 基础物料：redis 链接库 redis-plus-plus
+  - [x] 基础物料：log spdlog 封装
+  - [ ] 基础物料：配置 apollo-config
+    - c++ client 封装，基于http请求 long pooling
+      - postman 已做测试，代码部分需要封装
+  - [x] 基础物料：定时器 util::timer
+- [x] cmake 结构
+- [ ] 行为树研究 & 封装 behaviorTree.cpp
+  - 部分完成，是否好用还需要后面组合更多的行为然后再看
+- [ ] 游戏核心：
+  - [ ] 玩家
+  - [ ] 背包
+  - [ ] 任务
+  - [ ] 活动
+  - [ ] 技能
+  - [ ] AI
+  - [ ] 战斗
+  - [ ] 副本
+  - [ ] 游戏逻辑
+  - [ ] 游戏数据
+
+  
 ## 需求
 
 ### pre
