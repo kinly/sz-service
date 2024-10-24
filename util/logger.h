@@ -28,9 +28,9 @@
 namespace util::logger {
 
 class easy_logger_static {
-public:
+ public:
   static void init() {
-    constexpr std::size_t log_buffer_size = 32 * 1024; // 32kb
+    constexpr std::size_t log_buffer_size = 32 * 1024;  // 32kb
     spdlog::init_thread_pool(log_buffer_size,
                              std::thread::hardware_concurrency());
   }
@@ -56,25 +56,24 @@ public:
   }
 
   static const char *get_shortname(const std::string &path) {
-    if (path.empty())
-      return path.data();
+    if (path.empty()) return path.data();
 
     const size_t pos = path.find_last_of("/\\");
-    if (pos == std::string::npos)
-      return path.data() + 0;
+    if (pos == std::string::npos) return path.data() + 0;
     return path.data() + (pos + 1);
   }
 };
 
 /// let easy_logger like stream
 class log_line {
-private:
+ private:
   std::ostringstream _ss;
 
-public:
+ public:
   log_line() noexcept {}
 
-  template <class _Ty> log_line &operator<<(const _Ty &src) {
+  template <class _Ty>
+  log_line &operator<<(const _Ty &src) {
     _ss << src;
     return *this;
   }
@@ -82,11 +81,11 @@ public:
 };
 
 class log_stream {
-private:
+ private:
   spdlog::source_loc _loc;
   spdlog::level::level_enum _lvl = spdlog::level::info;
 
-public:
+ public:
   log_stream(const spdlog::source_loc &loc, spdlog::level::level_enum lvl)
       : _loc(loc), _lvl(lvl) {}
   bool operator==(const log_line &ll) const {
@@ -95,25 +94,28 @@ public:
   }
 };
 
+class stm2fmt {
+ private:
+};
+
 class easy_logger final : public easy_logger_static {
-public:
-private:
+ public:
+ private:
   std::atomic_bool _inited;
 
-public:
+ public:
   static easy_logger &get() {
     static easy_logger easy_logger;
     return easy_logger;
   }
 
   bool init(std::string_view filename) {
-
-    if (_inited.load())
-      return true;
+    if (_inited.load()) return true;
 
     try {
       // initialize spdlog
       std::vector<spdlog::sink_ptr> sinks;
+
       sinks.push_back(std::make_shared<spdlog::sinks::daily_file_sink_mt>(
           filename.data(), 0, 2));
 
@@ -121,19 +123,23 @@ public:
       // sinks.push_back(std::make_shared<spdlog::sinks::rotating_file_sink_mt>(
       //     filename.data(), max_file_size, 1024));
 
-#if !defined(WIN32) && !defined(NO_CONSOLE_LOG)
       sinks.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
+      // sinks.push_back(std::make_shared<spdlog::sinks::stderr_color_sink_mt>());
+#if !defined(WIN32) && !defined(NO_CONSOLE_LOG)
 #endif
 
 #if defined(_DEBUG) && defined(WIN32) && !defined(NO_CONSOLE_LOG)
       sinks.push_back(std::make_shared<spdlog::sinks::msvc_sink_mt>());
-#endif //  _DEBUG
+#endif  //  _DEBUG
 
       // register logger
       spdlog::set_default_logger(
           std::make_shared<spdlog::logger>("", sinks.begin(), sinks.end()));
 
-      spdlog::set_pattern("[%Y-%m-%d %T.%e][%l][%@][%P:%t]:%v");
+      // https://github.com/gabime/spdlog/wiki/3.-Custom-formatting#pattern-flags
+      // eg. [2024-07-15 11:15:54.345][debug][main.cpp:216][210852]:DEBUG log,
+      // 1, 1, 2
+      spdlog::set_pattern("%^[%Y-%m-%d %T.%e][%l][%@][%t]:%v%$");
       spdlog::flush_on(spdlog::level::warn);
       spdlog::set_level(spdlog::level::trace);
       spdlog::flush_every(std::chrono::seconds(3));
@@ -152,26 +158,86 @@ public:
     return true;
   }
 
-  template <typename... args_tt>
-  void log(const spdlog::source_loc &loc, spdlog::level::level_enum lvl,
-           const char *fmt, const args_tt &...args) {
-    spdlog::log(loc, lvl, fmt, args...);
+  /*
+   * fmt 类型从 const char* 修改为 const std::format_string<args_tt...>
+   * https://en.cppreference.com/w/cpp/utility/format/format
+   * Since P2216R3, std::format does a compile-time check on the format string
+   * (via the helper type std::format_string or std::wformat_string).
+   * If it is found to be invalid for the types of the arguments to be formatted,
+   * a compilation error will be emitted. If the format string cannot be a compile-time constant,
+   * or the compile-time check needs to be avoided, use std::vformat or std::runtime_format
+   * on fmt(since C++26) instead.
+   */
+  template <class... args_tt>
+  static void log(const spdlog::source_loc &loc, spdlog::level::level_enum lvl,
+                  const std::format_string<args_tt...> fmt, args_tt &&...args) {
+    spdlog::log(loc, lvl, fmt, std::forward<args_tt>(args)...);
   }
 
   template <typename... args_tt>
-  void print(const spdlog::source_loc &loc, spdlog::level::level_enum lvl,
-             const char *fmt, const args_tt &...args) {
+  static void print(const spdlog::source_loc &loc,
+                    spdlog::level::level_enum lvl, const char *fmt,
+                    const args_tt &...args) {
     spdlog::log(loc, lvl, fmt::sprintf(fmt, args...).c_str());
   }
 
-private:
+  template <typename... args_tt>
+  void stm(const spdlog::source_loc &loc, spdlog::level::level_enum lvl,
+           const args_tt &...args) {
+    constexpr auto arg_size = sizeof...(args);
+    if constexpr (arg_size == 0)
+      spdlog::log(loc, lvl, "{}", "");
+    else if constexpr (arg_size == 1)
+      spdlog::log(loc, lvl, "{}", args...);
+    else if constexpr (arg_size == 2)
+      spdlog::log(loc, lvl, "{}{}", args...);
+    else if constexpr (arg_size == 3)
+      spdlog::log(loc, lvl, "{}{}{}", args...);
+    else if constexpr (arg_size == 4)
+      spdlog::log(loc, lvl, "{}{}{}{}", args...);
+    else if constexpr (arg_size == 5)
+      spdlog::log(loc, lvl, "{}{}{}{}{}", args...);
+    else if constexpr (arg_size == 6)
+      spdlog::log(loc, lvl, "{}{}{}{}{}{}", args...);
+    else if constexpr (arg_size == 7)
+      spdlog::log(loc, lvl, "{}{}{}{}{}{}{}", args...);
+    else if constexpr (arg_size == 8)
+      spdlog::log(loc, lvl, "{}{}{}{}{}{}{}{}", args...);
+    else if constexpr (arg_size == 9)
+      spdlog::log(loc, lvl, "{}{}{}{}{}{}{}{}{}", args...);
+    else if constexpr (arg_size == 10)
+      spdlog::log(loc, lvl, "{}{}{}{}{}{}{}{}{}{}", args...);
+    else if constexpr (arg_size == 11)
+      spdlog::log(loc, lvl, "{}{}{}{}{}{}{}{}{}{}{}", args...);
+    else if constexpr (arg_size == 12)
+      spdlog::log(loc, lvl, "{}{}{}{}{}{}{}{}{}{}{}{}", args...);
+    else if constexpr (arg_size == 13)
+      spdlog::log(loc, lvl, "{}{}{}{}{}{}{}{}{}{}{}{}{}", args...);
+    else if constexpr (arg_size == 14)
+      spdlog::log(loc, lvl, "{}{}{}{}{}{}{}{}{}{}{}{}{}{}", args...);
+    else if constexpr (arg_size == 15)
+      spdlog::log(loc, lvl, "{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}", args...);
+    else if constexpr (arg_size == 16)
+      spdlog::log(loc, lvl, "{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}", args...);
+    else if constexpr (arg_size == 17)
+      spdlog::log(loc, lvl, "{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}", args...);
+    else if constexpr (arg_size == 18)
+      spdlog::log(loc, lvl, "{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}", args...);
+    else if constexpr (arg_size == 19)
+      spdlog::log(loc, lvl, "{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}", args...);
+    else if constexpr (arg_size == 20)
+      spdlog::log(loc, lvl, "{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}",
+                  args...);
+  }
+
+ private:
   easy_logger() = default;
   ~easy_logger() = default;
 
   easy_logger(const easy_logger &) = delete;
   void operator=(const easy_logger &) = delete;
 };
-} // namespace util::logger
+}  // namespace util::logger
 
 #include "nostd_source_location.h"
 
@@ -181,151 +247,153 @@ private:
 
 // default
 // use fmt lib, e.g. LOG_TRACE("warn log, {1}, {1}, {2}", 1, 2);
-#define LOG_TRACE(msg, ...)                                                    \
-  {                                                                            \
-    if (util::logger::easy_logger_static::should_log(spdlog::level::trace)) {  \
-      constexpr nostd::source_location ns_sl =                                 \
-          nostd::source_location::current(                                     \
-              __builtin_FILE(), __builtin_FUNCTION(), __builtin_LINE(),        \
-              __builtin_COLUMN());                                             \
-      util::logger::easy_logger::get().log(                                    \
-          {ns_sl.file_name(), ns_sl.line(), ns_sl.function_name()},            \
-          spdlog::level::trace, msg, ##__VA_ARGS__);                           \
-    }                                                                          \
+#define LOG_TRACE(msg, ...)                                                   \
+  {                                                                           \
+    if (util::logger::easy_logger_static::should_log(spdlog::level::trace)) { \
+      constexpr nostd::source_location ns_sl =                                \
+          nostd::source_location::current(                                    \
+              __builtin_FILE(), __builtin_FUNCTION(), __builtin_LINE(),       \
+              __builtin_COLUMN());                                            \
+      util::logger::easy_logger::log(                                         \
+          {ns_sl.file_name(), ns_sl.line(), ns_sl.function_name()},           \
+          spdlog::level::trace, msg, ##__VA_ARGS__);                          \
+    }                                                                         \
   };
-#define LOG_DEBUG(msg, ...)                                                    \
-  {                                                                            \
-    if (util::logger::easy_logger_static::should_log(spdlog::level::debug)) {  \
-      constexpr nostd::source_location ns_sl =                                 \
-          nostd::source_location::current(                                     \
-              __builtin_FILE(), __builtin_FUNCTION(), __builtin_LINE(),        \
-              __builtin_COLUMN());                                             \
-      util::logger::easy_logger::get().log(                                    \
-          {ns_sl.file_name(), ns_sl.line(), ns_sl.function_name()},            \
-          spdlog::level::debug, msg, ##__VA_ARGS__);                           \
-    }                                                                          \
+#define LOG_DEBUG(msg, ...)                                                   \
+  {                                                                           \
+    if (util::logger::easy_logger_static::should_log(spdlog::level::debug)) { \
+      constexpr nostd::source_location ns_sl =                                \
+          nostd::source_location::current(                                    \
+              __builtin_FILE(), __builtin_FUNCTION(), __builtin_LINE(),       \
+              __builtin_COLUMN());                                            \
+      util::logger::easy_logger::log(                                         \
+          {ns_sl.file_name(), ns_sl.line(), ns_sl.function_name()},           \
+          spdlog::level::debug, msg, ##__VA_ARGS__);                          \
+    }                                                                         \
   };
-#define LOG_INFO(msg, ...)                                                     \
-  {                                                                            \
-    if (util::logger::easy_logger_static::should_log(spdlog::level::info)) {   \
-      constexpr nostd::source_location ns_sl =                                 \
-          nostd::source_location::current(                                     \
-              __builtin_FILE(), __builtin_FUNCTION(), __builtin_LINE(),        \
-              __builtin_COLUMN());                                             \
-      util::logger::easy_logger::get().log(                                    \
-          {ns_sl.file_name(), ns_sl.line(), ns_sl.function_name()},            \
-          spdlog::level::info, msg, ##__VA_ARGS__);                            \
-    }                                                                          \
+#define LOG_INFO(msg, ...)                                                   \
+  {                                                                          \
+    if (util::logger::easy_logger_static::should_log(spdlog::level::info)) { \
+      constexpr nostd::source_location ns_sl =                               \
+          nostd::source_location::current(                                   \
+              __builtin_FILE(), __builtin_FUNCTION(), __builtin_LINE(),      \
+              __builtin_COLUMN());                                           \
+      util::logger::easy_logger::log(                                        \
+          {ns_sl.file_name(), ns_sl.line(), ns_sl.function_name()},          \
+          spdlog::level::info, msg, ##__VA_ARGS__);                          \
+    }                                                                        \
   };
-#define LOG_WARN(msg, ...)                                                     \
-  {                                                                            \
-    if (util::logger::easy_logger_static::should_log(spdlog::level::warn)) {   \
-      constexpr nostd::source_location ns_sl =                                 \
-          nostd::source_location::current(                                     \
-              __builtin_FILE(), __builtin_FUNCTION(), __builtin_LINE(),        \
-              __builtin_COLUMN());                                             \
-      util::logger::easy_logger::get().log(                                    \
-          {ns_sl.file_name(), ns_sl.line(), ns_sl.function_name()},            \
-          spdlog::level::warn, msg, ##__VA_ARGS__);                            \
-    }                                                                          \
+#define LOG_WARN(msg, ...)                                                   \
+  {                                                                          \
+    if (util::logger::easy_logger_static::should_log(spdlog::level::warn)) { \
+      constexpr nostd::source_location ns_sl =                               \
+          nostd::source_location::current(                                   \
+              __builtin_FILE(), __builtin_FUNCTION(), __builtin_LINE(),      \
+              __builtin_COLUMN());                                           \
+      util::logger::easy_logger::log(                                        \
+          {ns_sl.file_name(), ns_sl.line(), ns_sl.function_name()},          \
+          spdlog::level::warn, msg, ##__VA_ARGS__);                          \
+    }                                                                        \
   };
-#define LOG_ERROR(msg, ...)                                                    \
-  {                                                                            \
-    if (util::logger::easy_logger_static::should_log(spdlog::level::err)) {    \
-      constexpr nostd::source_location ns_sl =                                 \
-          nostd::source_location::current(                                     \
-              __builtin_FILE(), __builtin_FUNCTION(), __builtin_LINE(),        \
-              __builtin_COLUMN());                                             \
-      util::logger::easy_logger::get().log(                                    \
-          {ns_sl.file_name(), ns_sl.line(), ns_sl.function_name()},            \
-          spdlog::level::err, msg, ##__VA_ARGS__);                             \
-    }                                                                          \
+#define LOG_ERROR(msg, ...)                                                 \
+  {                                                                         \
+    if (util::logger::easy_logger_static::should_log(spdlog::level::err)) { \
+      constexpr nostd::source_location ns_sl =                              \
+          nostd::source_location::current(                                  \
+              __builtin_FILE(), __builtin_FUNCTION(), __builtin_LINE(),     \
+              __builtin_COLUMN());                                          \
+      util::logger::easy_logger::log(                                       \
+          {ns_sl.file_name(), ns_sl.line(), ns_sl.function_name()},         \
+          spdlog::level::err, msg, ##__VA_ARGS__);                          \
+    }                                                                       \
   };
-#define LOG_CRIT(msg, ...)                                                     \
-  {                                                                            \
-    if (util::logger::easy_logger_static::should_log(                          \
-            spdlog::level::critical)) {                                        \
-      constexpr nostd::source_location ns_sl =                                 \
-          nostd::source_location::current(                                     \
-              __builtin_FILE(), __builtin_FUNCTION(), __builtin_LINE(),        \
-              __builtin_COLUMN());                                             \
-      util::logger::easy_logger::get().log(                                    \
-          {ns_sl.file_name(), ns_sl.line(), ns_sl.function_name()},            \
-          spdlog::level::critical, msg, ##__VA_ARGS__);                        \
-    }                                                                          \
+#define LOG_CRIT(msg, ...)                                              \
+  {                                                                     \
+    if (util::logger::easy_logger_static::should_log(                   \
+            spdlog::level::critical)) {                                 \
+      constexpr nostd::source_location ns_sl =                          \
+          nostd::source_location::current(                              \
+              __builtin_FILE(), __builtin_FUNCTION(), __builtin_LINE(), \
+              __builtin_COLUMN());                                      \
+      util::logger::easy_logger::log(                                   \
+          {ns_sl.file_name(), ns_sl.line(), ns_sl.function_name()},     \
+          spdlog::level::critical, msg, ##__VA_ARGS__);                 \
+    }                                                                   \
   };
 
 // use like sprintf, e.g. PRINT_TRACE("warn log, %d-%d", 1, 2);
-#define PRINT_TRACE(msg, ...)                                                  \
-  {                                                                            \
-    if (util::logger::easy_logger_static::should_log(spdlog::level::trace)) {  \
-      constexpr nostd::source_location ns_sl =                                 \
-          nostd::source_location::current(                                     \
-              __builtin_FILE(), __builtin_FUNCTION(), __builtin_LINE(),        \
-              __builtin_COLUMN());                                             \
-      util::logger::easy_logger::get().print(                                  \
-          {ns_sl.file_name(), ns_sl.line(), ns_sl.function_name()},            \
-          spdlog::level::trace, msg, ##__VA_ARGS__);                           \
-    }                                                                          \
+#define PRINT_TRACE(msg, ...)                                                 \
+  {                                                                           \
+    if (util::logger::easy_logger_static::should_log(spdlog::level::trace)) { \
+      constexpr nostd::source_location ns_sl =                                \
+          nostd::source_location::current(                                    \
+              __builtin_FILE(), __builtin_FUNCTION(), __builtin_LINE(),       \
+              __builtin_COLUMN());                                            \
+      util::logger::easy_logger::print(                                       \
+          {ns_sl.file_name(), ns_sl.line(), ns_sl.function_name()},           \
+          spdlog::level::trace, msg, ##__VA_ARGS__);                          \
+    }                                                                         \
   };
-#define PRINT_DEBUG(msg, ...)                                                  \
-  {                                                                            \
-    if (util::logger::easy_logger_static::should_log(spdlog::level::debug)) {  \
-      constexpr nostd::source_location ns_sl =                                 \
-          nostd::source_location::current(                                     \
-              __builtin_FILE(), __builtin_FUNCTION(), __builtin_LINE(),        \
-              __builtin_COLUMN());                                             \
-      util::logger::easy_logger::get().print(                                  \
-          {ns_sl.file_name(), ns_sl.line(), ns_sl.function_name()},            \
-          spdlog::level::debug, msg, ##__VA_ARGS__);                           \
-    }                                                                          \
+#define PRINT_DEBUG(msg, ...)                                                 \
+  {                                                                           \
+    if (util::logger::easy_logger_static::should_log(spdlog::level::debug)) { \
+      constexpr nostd::source_location ns_sl =                                \
+          nostd::source_location::current(                                    \
+              __builtin_FILE(), __builtin_FUNCTION(), __builtin_LINE(),       \
+              __builtin_COLUMN());                                            \
+      util::logger::easy_logger::print(                                       \
+          {ns_sl.file_name(), ns_sl.line(), ns_sl.function_name()},           \
+          spdlog::level::debug, msg, ##__VA_ARGS__);                          \
+    }                                                                         \
   };
-#define PRINT_INFO(msg, ...)                                                   \
-  {                                                                            \
-    if (util::logger::easy_logger_static::should_log(spdlog::level::info)) {   \
-      constexpr nostd::source_location ns_sl =                                 \
-          nostd::source_location::current(                                     \
-              __builtin_FILE(), __builtin_FUNCTION(), __builtin_LINE(),        \
-              __builtin_COLUMN());                                             \
-      util::logger::easy_logger::get().print(                                  \
-          {ns_sl.file_name(), ns_sl.line(), ns_sl.function_name()},            \
-          spdlog::level::info, msg, ##__VA_ARGS__);                            \
-    }                                                                          \
+#define PRINT_INFO(msg, ...)                                                 \
+  {                                                                          \
+    if (util::logger::easy_logger_static::should_log(spdlog::level::info)) { \
+      constexpr nostd::source_location ns_sl =                               \
+          nostd::source_location::current(                                   \
+              __builtin_FILE(), __builtin_FUNCTION(), __builtin_LINE(),      \
+              __builtin_COLUMN());                                           \
+      util::logger::easy_logger::print(                                      \
+          {ns_sl.file_name(), ns_sl.line(), ns_sl.function_name()},          \
+          spdlog::level::info, msg, ##__VA_ARGS__);                          \
+    }                                                                        \
   };
-#define PRINT_WARN(msg, ...)                                                   \
-  {                                                                            \
-    if (util::logger::easy_logger_static::should_log(spdlog::level::warn)) {   \
-      constexpr nostd::source_location ns_sl =                                 \
-          nostd::source_location::current(                                     \
-              __builtin_FILE(), __builtin_FUNCTION(), __builtin_LINE(),        \
-              __builtin_COLUMN());                                             \
-      util::logger::easy_logger::get().print(                                  \
-          {ns_sl.file_name(), ns_sl.line(), ns_sl.function_name()},            \
-          spdlog::level::warn, msg, ##__VA_ARGS__);                            \
-    }                                                                          \
+#define PRINT_WARN(msg, ...)                                                 \
+  {                                                                          \
+    if (util::logger::easy_logger_static::should_log(spdlog::level::warn)) { \
+      constexpr nostd::source_location ns_sl =                               \
+          nostd::source_location::current(                                   \
+              __builtin_FILE(), __builtin_FUNCTION(), __builtin_LINE(),      \
+              __builtin_COLUMN());                                           \
+      util::logger::easy_logger::print(                                      \
+          {ns_sl.file_name(), ns_sl.line(), ns_sl.function_name()},          \
+          spdlog::level::warn, msg, ##__VA_ARGS__);                          \
+    }                                                                        \
   };
-#define PRINT_ERROR(msg, ...)                                                  \
-  {                                                                            \
-    if (util::logger::easy_logger_static::should_log(spdlog::level::err)) {    \
-      constexpr nostd::source_location ns_sl =                                 \
-          nostd::source_location::current(                                     \
-              __builtin_FILE(), __builtin_FUNCTION(), __builtin_LINE(),        \
-              __builtin_COLUMN());                                             \
-      util::logger::easy_logger::get().print(                                  \
-          {ns_sl.file_name(), ns_sl.line(), ns_sl.function_name()},            \
-          spdlog::level::err, msg, ##__VA_ARGS__);                             \
-    }                                                                          \
+#define PRINT_ERROR(msg, ...)                                               \
+  {                                                                         \
+    if (util::logger::easy_logger_static::should_log(spdlog::level::err)) { \
+      constexpr nostd::source_location ns_sl =                              \
+          nostd::source_location::current(                                  \
+              __builtin_FILE(), __builtin_FUNCTION(), __builtin_LINE(),     \
+              __builtin_COLUMN());                                          \
+      util::logger::easy_logger::print(                                     \
+          {ns_sl.file_name(), ns_sl.line(), ns_sl.function_name()},         \
+          spdlog::level::err, msg, ##__VA_ARGS__);                          \
+    }                                                                       \
   };
-#define PRINT_CRIT(msg, ...)                                                   \
-  {                                                                            \
-    if (util::logger::easy_logger_static::should_log(                          \
-            spdlog::level::critical)) {                                        \
-      constexpr nostd::source_location ns_sl =                                 \
-          nostd::source_location::current(                                     \
-              __builtin_FILE(), __builtin_FUNCTION(), __builtin_LINE(),        \
-              __builtin_COLUMN());                                             \
-      util::logger::easy_logger::get().print(                                  \
-          {ns_sl.file_name(), ns_sl.line(), ns_sl.function_name()},            \
-          spdlog::level::critical, msg, ##__VA_ARGS__);                        \
-    }                                                                          \
+#define PRINT_CRIT(msg, ...)                                            \
+  {                                                                     \
+    if (util::logger::easy_logger_static::should_log(                   \
+            spdlog::level::critical)) {                                 \
+      constexpr nostd::source_location ns_sl =                          \
+          nostd::source_location::current(                              \
+              __builtin_FILE(), __builtin_FUNCTION(), __builtin_LINE(), \
+              __builtin_COLUMN());                                      \
+      util::logger::easy_logger::print(                                 \
+          {ns_sl.file_name(), ns_sl.line(), ns_sl.function_name()},     \
+          spdlog::level::critical, msg, ##__VA_ARGS__);                 \
+    }                                                                   \
   };
+
+// use like stringstream, e.g. STM_TRACE("warn log" << 1 << 2);
