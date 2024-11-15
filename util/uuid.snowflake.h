@@ -1,112 +1,113 @@
 #pragma once
 
+#include <atomic>
 #include <chrono>
 #include <cstdint>
-#include <mutex>
 #include <stdexcept>
-
-#include "non-lock.h"
+#include <mutex>
 
 namespace util::uuid_snowflake {
 
-// via: https://github.com/sniper00/snowflake-cpp/blob/master/snowflake.hpp
+class snowflake_nonlock {
+ public:
+  void lock() {}
+  void unlock() {}
+};
 
-template <typename lock_tt = empty_mutex> class snowflake {
-  using lock_type = lock_tt;
-  static constexpr int64_t TWEPOCH = 1704038400000;
-  static constexpr int64_t WORKER_ID_BITS = 5L;
-  static constexpr int64_t DATACENTER_ID_BITS = 5L;
-  static constexpr int64_t MAX_WORKER_ID = (1 << WORKER_ID_BITS) - 1;
-  static constexpr int64_t MAX_DATACENTER_ID = (1 << DATACENTER_ID_BITS) - 1;
-  static constexpr int64_t SEQUENCE_BITS = 12L;
-  static constexpr int64_t WORKER_ID_SHIFT = SEQUENCE_BITS;
-  static constexpr int64_t DATACENTER_ID_SHIFT = SEQUENCE_BITS + WORKER_ID_BITS;
-  static constexpr int64_t TIMESTAMP_LEFT_SHIFT =
-      SEQUENCE_BITS + WORKER_ID_BITS + DATACENTER_ID_BITS;
-  static constexpr int64_t SEQUENCE_MASK = (1 << SEQUENCE_BITS) - 1;
+template <class lock_tt = snowflake_nonlock>
+class snowflake {
+ private:
+  static constexpr int64_t _epoch = 1609459200000L;  // 2021-01-01 00:00:00 UTC
+  static constexpr int64_t _machine_id_bits = 5;
+  static constexpr int64_t _data_center_id_bits = 5;
+  static constexpr int64_t _sequence_bits = 12;
+
+  static constexpr int64_t _max_machine_id = (1 << _machine_id_bits) - 1;
+  static constexpr int64_t _max_data_center_id =
+      (1 << _data_center_id_bits) - 1;
+  static constexpr int64_t _sequence_mask = (1 << _sequence_bits) - 1;
+
+  static constexpr int64_t _machine_id_shift = _sequence_bits;
+  static constexpr int64_t _data_center_id_shift =
+      _sequence_bits + _machine_id_bits;
+  static constexpr int64_t _timestamp_shift =
+      _sequence_bits + _machine_id_bits + _data_center_id_bits;
 
   using time_point = std::chrono::time_point<std::chrono::steady_clock>;
-
-  time_point start_time_point_ = std::chrono::steady_clock::now();
-  int64_t start_millisecond_ =
+  time_point _start_time_point = std::chrono::steady_clock::now();
+  int64_t _start_millisecond =
       std::chrono::duration_cast<std::chrono::milliseconds>(
           std::chrono::system_clock::now().time_since_epoch())
           .count();
 
-  int64_t last_timestamp_ = -1;
-  int64_t worker_id_ = 0;
-  int64_t datacenter_id_ = 0;
-  int64_t sequence_ = 0;
-  mutable lock_type lock_;
+  std::atomic<int64_t> _last_timestamp{-1};
+  std::atomic<int64_t> _sequence{0};
 
-public:
+  const int64_t _machine_id = 0;
+  const int64_t _data_center_id = 0;
+
+  lock_tt _lock;
+
+ public:
   snowflake() = default;
 
-  snowflake(const snowflake &) = delete;
-
-  snowflake &operator=(const snowflake &) = delete;
-
-  void init(int64_t worker_id, int64_t datacenter_id) {
-    if (worker_id > MAX_WORKER_ID || worker_id < 0) {
-      throw std::runtime_error(
-          "worker Id can't be greater than 31 or less than 0");
+  snowflake(int64_t machine_id, int64_t data_center_id)
+      : _machine_id(machine_id), _data_center_id(data_center_id) {
+    if (machine_id < 0 || machine_id >= (1 << _machine_id_bits)) {
+      throw std::invalid_argument("Machine ID is out of range");
     }
-
-    if (datacenter_id > MAX_DATACENTER_ID || datacenter_id < 0) {
-      throw std::runtime_error(
-          "datacenter Id can't be greater than 31 or less than 0");
+    if (data_center_id < 0 || data_center_id >= (1 << _data_center_id_bits)) {
+      throw std::invalid_argument("Data Center ID is out of range");
     }
-
-    worker_id_ = worker_id;
-    datacenter_id_ = datacenter_id;
   }
 
-  int64_t nextid() {
-    std::lock_guard<lock_type> lock(lock_);
-    // std::chrono::steady_clock  cannot decrease as physical time moves forward
-    auto timestamp = millisecond();
-    if (last_timestamp_ == timestamp) {
-      sequence_ = (sequence_ + 1) & SEQUENCE_MASK;
-      if (sequence_ == 0) {
-        timestamp = wait_next_millis(last_timestamp_);
+  int64_t generate() {
+    std::lock_guard<lock_tt> lock(_lock);
+    auto timestamp = current_milliseconds();
+    if (_last_timestamp == timestamp) {
+      _sequence = (_sequence + 1) & _sequence_mask;
+      if (_sequence == 0) {
+        timestamp = wait_next_millisecond(_last_timestamp);
       }
-    } else {
-      sequence_ = 0;
+    }
+    else {
+      _sequence = 0;
     }
 
-    last_timestamp_ = timestamp;
+    _last_timestamp = timestamp;
 
-    return ((timestamp - TWEPOCH) << TIMESTAMP_LEFT_SHIFT) |
-           (datacenter_id_ << DATACENTER_ID_SHIFT) |
-           (worker_id_ << WORKER_ID_SHIFT) | sequence_;
+    return ((timestamp - _epoch) << _timestamp_shift) |
+           (_data_center_id << _data_center_id_shift) |
+           (_machine_id << _machine_id_shift) | _sequence;
   }
 
-private:
-  int64_t millisecond() const noexcept {
-    const auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(
-        std::chrono::steady_clock::now() - start_time_point_);
-    return start_millisecond_ + diff.count();
+ private:
+  int64_t current_milliseconds() const {
+    auto diff = std::chrono::duration_cast<std::chrono::milliseconds>(
+        std::chrono::steady_clock::now() - _start_time_point);
+    return _start_millisecond + diff.count();
   }
 
-  int64_t wait_next_millis(int64_t last) const noexcept {
-    auto timestamp = millisecond();
-    while (timestamp <= last) {
-      timestamp = millisecond();
+  int64_t wait_next_millisecond(int64_t last_timestamp) const {
+    int64_t timestamp = current_milliseconds();
+    while (timestamp <= last_timestamp) {
+      timestamp = current_milliseconds();
     }
     return timestamp;
   }
 };
 
-struct generator {
-  static snowflake<> &inst() {
-    static snowflake<> inst;
-    return inst;
+//  the namespace can be simplified by using "using snowflake = util::uuid_snowflake::generate;".
+struct generate {
+  static snowflake<>& instance() {
+    static snowflake<> result;
+    return result;
   }
 
-  static snowflake<std::mutex> &inst_mt() {
-    static snowflake<std::mutex> inst;
-    return inst;
+  static snowflake<std::mutex>& instance_mt() {
+    static snowflake<std::mutex> result;
+    return result;
   }
 };
 
-}; // namespace util::uuid_snowflake
+};  // namespace util::uuid_snowflake

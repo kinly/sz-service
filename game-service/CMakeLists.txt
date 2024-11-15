@@ -15,6 +15,8 @@ include(../cmake/3rd.hiredis.cmake)
 include(../cmake/3rd.redis++.cmake)
 include(../cmake/3rd.behaviorTree.cpp.cmake)
 include(../cmake/3rd.spdlog.cmake)
+include(../cmake/3rd.sol2.cmake)
+include(../cmake/3rd.lua.cmake)
 
 # files
 include(./cmake/files.cmake)

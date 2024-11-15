@@ -1,5 +1,6 @@
 #pragma once
 #include <cstdint>
+#include <memory>
 #include <stack>
 #include <vector>
 
@@ -7,37 +8,35 @@ namespace util {
 
 static constexpr int32_t size_unlimited = -1;
 
-template <class object_tt, int32_t size_tt> class allocator {
-public:
-  using object_ptr = object_tt *;
+template <class object_tt, int32_t size_vv>
+class allocator {
+ public:
+  using object_type = std::decay_t<object_tt>;
+  using object_ptr = std::unique_ptr<object_type>;
 
-protected:
+ protected:
   std::vector<object_ptr> _alloceds;
 
-private:
-  void *__allocate() {
-    void *result = nullptr;
+ private:
+  object_ptr __allocate() {
+    object_type* result;
     if (!_alloceds.empty()) {
-      result = static_cast<void *>(_alloceds.back());
+      result = _alloceds.back().release();
       _alloceds.pop_back();
     } else {
-      result = ::operator new(sizeof(object_tt));
+      result = static_cast<object_ptr>(::operator new(sizeof(object_tt)));
     }
     return result;
   }
 
-public:
-  allocator() { _alloceds.reserve(size_tt); }
+ public:
+  allocator() { _alloceds.reserve(size_vv); }
 
-  virtual ~allocator() {
-    while (!_alloceds.empty()) {
-      ::operator delete(_alloceds.back());
-      _alloceds.pop_back();
-    }
-  }
+  virtual ~allocator() { _alloceds.clear(); }
 
-  template <typename... Args> object_ptr allocate(Args &&...args) {
-    object_ptr place = static_cast<object_ptr>(__allocate());
+  template <typename... Args>
+  object_ptr allocate(Args &&...args) {
+    object_ptr place = __allocate();
     try {
       new (place) object_tt(std::forward<Args>(args)...);
     } catch (...) {
@@ -50,7 +49,7 @@ public:
   void deallocate(object_ptr obj) {
     obj->~object_tt();
 
-    if (_alloceds.size() >= size_tt) {
+    if (_alloceds.size() >= size_vv) {
       ::operator delete(obj);
       obj = nullptr;
     } else {
@@ -59,37 +58,35 @@ public:
   }
 };
 
-template <class object_tt> class allocator<object_tt, size_unlimited> {
-public:
-  using object_ptr = object_tt *;
+template <class object_tt>
+class allocator<object_tt, size_unlimited> {
+ public:
+  using object_type = std::decay_t<object_tt>;
+  using object_ptr = std::unique_ptr<object_type>;
 
-protected:
+ protected:
   std::stack<object_ptr> _alloceds;
 
-private:
+ private:
   void *__allocate() {
-    void *result = nullptr;
+    object_type *result;
     if (!_alloceds.empty()) {
-      result = static_cast<void *>(_alloceds.top());
+      result = _alloceds.top().release();
       _alloceds.pop();
     } else {
-      result = ::operator new(sizeof(object_tt));
+      result = static_cast<object_ptr>(::operator new(sizeof(object_tt)));
     }
     return result;
   }
 
-public:
+ public:
   allocator() {}
 
-  virtual ~allocator() {
-    while (!_alloceds.empty()) {
-      ::operator delete(_alloceds.top());
-      _alloceds.pop();
-    }
-  }
+  virtual ~allocator() { _alloceds.clear(); }
 
-  template <typename... Args> object_ptr allocate(Args &&...args) {
-    auto place = static_cast<object_ptr>(__allocate());
+  template <typename... Args>
+  object_ptr allocate(Args &&...args) {
+    object_ptr place = __allocate();
     try {
       new (place) object_tt(std::forward<Args>(args)...);
     } catch (...) {
@@ -104,7 +101,7 @@ public:
     _alloceds.push(obj);
   }
 };
-} // namespace easy
+}  // namespace util
 
 /*
  *
